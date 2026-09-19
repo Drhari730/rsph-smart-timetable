@@ -491,16 +491,21 @@ function countUp() {
       else el.textContent = finalText(el);
     })(performance.now());
   };
-  const io = new IntersectionObserver(es => {
-    es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } });
-  }, { threshold: 0.4 });
-  els.forEach(e => io.observe(e));
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } });
+    }, { threshold: 0.4 });
+    els.forEach(e => io.observe(e));
+  } else {
+    els.forEach(run);
+  }
 
-  // Belt-and-suspenders: if the tab was hidden when everything above ran,
-  // snap every counter to its correct value as soon as it becomes visible.
-  document.addEventListener('visibilitychange', function fix() {
-    if (!document.hidden) { els.forEach(el => { el.textContent = finalText(el); }); document.removeEventListener('visibilitychange', fix); }
-  });
+  // Belt-and-suspenders, unconditional: if a hidden document never fires the
+  // observer at all (seen in some embedded/automated contexts), or the tab
+  // never becomes visible for the visibilitychange fallback to catch, force
+  // every counter to its correct final value once, a couple of seconds in.
+  // Harmless no-op if the animation already got there on its own.
+  setTimeout(() => { els.forEach(el => { el.textContent = finalText(el); }); }, 2000);
 }
 
 /* ---------- export ------------------------------------------------------- */
