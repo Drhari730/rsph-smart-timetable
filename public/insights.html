@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Insights &amp; Checks | RSPH Smart Timetable</title>
+<link rel="icon" type="image/svg+xml" href="assets/rsph_icon.svg"/>
+<link rel="stylesheet" href="assets/style.css"/>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+
+<div class="page-title-bar">
+  <span class="eyebrow smallcaps">Automatic checks</span>
+  <h1>Insights &amp; Checks</h1>
+  <p>Every published timetable, checked against every other published timetable and against the approved Programme &amp; Course Specifications. Everything on this page is recomputed when the page loads &mdash; add a timetable to the data file and the checks run over it too.</p>
+</div>
+
+<div id="body"></div>
+
+</main>
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+RSPH_READY.then(function(){
+  TT.mountChrome('insights.html');
+
+  var out = '';
+  var cl = TT.clashes();
+
+  /* ---------------- 1. clashes ---------------- */
+  out += '<div class="section-title"><span class="num">1</span><div>' +
+    '<h2>Clash detection</h2><p class="sub">Sessions that overlap in clock time on the same weekday ' +
+    'while both semesters are in term, and that share a venue or a named teacher.</p></div></div>';
+
+  if (!cl.length){
+    out += '<p class="note ok"><span class="note-lbl">No clashes found</span>' +
+      'No two sessions across the published timetables compete for the same room or the same teacher.</p>';
+  } else {
+    /* group individual session-pair overlaps by (timetable pair + reason) so
+       two grids that share a whole day's structure produce one card, not
+       one row per half-hour. */
+    var groups = {}, order = [];
+    cl.forEach(function(c){
+      var key = [c.a.tt.id, c.b.tt.id].sort().join('|') + '|' + c.reason;
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(c);
+    });
+
+    out += order.map(function(key){
+      var list = groups[key], first = list[0];
+      var pA = RSPH.programmes[first.a.tt.prog], pB = RSPH.programmes[first.b.tt.prog];
+      var totalMin = list.reduce(function(a,c){ return a + (c.to - c.from); }, 0);
+      var certain = list.some(function(c){ return c.certain; });
+      var days = {};
+      list.forEach(function(c){ days[c.day] = true; });
+
+      var rows = list.map(function(c){
+        function side(s){
+          return '<strong style="color:var(--indigo)">' + s.title + '</strong>' +
+            (s.code ? ' <span class="code">' + s.code + '</span>' : '') + '<br/>' +
+            '<span style="font-size:11.5px;color:var(--ink-soft)">' + s.startLabel + '&ndash;' + s.endLabel +
+            (s.faculty ? ' &middot; ' + s.faculty : '') + '</span>';
+        }
+        return '<tr><td><strong>' + RSPH.DAY_FULL[c.day] + '</strong></td>' +
+          '<td>' + side(c.a) + '</td><td>' + side(c.b) + '</td></tr>';
+      }).join('');
+
+      return '<details class="module-block" style="margin-bottom:14px">' +
+        '<summary><span class="modtitle">' +
+          '<span class="pill ' + first.a.tt.prog + '">' + pA.short + ' Sem ' + first.a.tt.sem + '</span>' +
+          '&nbsp;&harr;&nbsp;' +
+          '<span class="pill ' + first.b.tt.prog + '">' + pB.short + ' Sem ' + first.b.tt.sem + '</span>' +
+          '&nbsp; <span class="pill alert">' + (first.reason === 'faculty' ? 'Same teacher' : 'Same venue') +
+          ': ' + TT.plain(first.a.venue === first.b.venue ? first.a.venue : (first.a.faculty || '')) + '</span>' +
+        '</span><span class="modtitle-right">' +
+          '<span class="mod-duration">' + list.length + ' overlapping slot' + (list.length===1?'':'s') +
+          ' &middot; ' + TT.hrs(totalMin) + '/wk' + '</span>' +
+          (certain ? '<span class="pill alert">Terms overlap</span>' : '<span class="pill warn">Dates unconfirmed</span>') +
+          '<span class="chev">&#9660;</span>' +
+        '</span></summary>' +
+        '<div style="padding:16px 22px 20px">' +
+        '<table class="data-table" style="margin-bottom:0"><thead><tr><th>Day</th><th>' + pA.short +
+        '</th><th>' + pB.short + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '</details>';
+    }).join('');
+
+    out += '<p class="note warn"><span class="note-lbl">Read with care</span>' +
+      '&ldquo;Terms overlap&rdquo; means both timetables&rsquo; own start/end dates say they are genuinely ' +
+      'in session at the same time. &ldquo;Dates unconfirmed&rdquo; means one side is missing a start or end ' +
+      'date in its source document (see Section 4) &mdash; the overlap cannot be ruled out, but it is not ' +
+      'confirmed either. A venue clash only fires on an <em>exact</em> match of the printed venue text, so ' +
+      'MPH&rsquo;s hedged &ldquo;Classroom 1 / available classroom&rdquo; is not automatically matched against ' +
+      'MHA&rsquo;s plain &ldquo;Classroom 1&rdquo; &mdash; that specific pair is close enough in wording that ' +
+      'the course coordinator should still confirm the two cohorts get different rooms when both are in term.</p>';
+  }
+
+  /* ---------------- 2. contact hours vs credits ---------------- */
+  out += '<div class="section-title" style="margin-top:40px"><span class="num">2</span><div>' +
+    '<h2>Contact hours against the approved scheme</h2>' +
+    '<p class="sub">Weekly hours each sanctioned course receives on its issued timetable, ' +
+    'next to its credit weighting.</p></div></div>';
+
+  RSPH.timetables.forEach(function(tt){
+    var p = RSPH.programmes[tt.prog];
+    var cov = TT.coverage(tt.prog, tt.sem);
+    var contact = TT.weeklyContact(tt);
+    var totalCr = cov.reduce(function(a,c){ return a + c.course.credits; }, 0);
+
+    out += '<h3 style="font-family:\'Playfair Display\',serif;font-size:18px;color:var(--indigo);' +
+      'margin:26px 0 10px"><span class="pill ' + tt.prog + '">' + p.short + '</span> Semester ' + tt.sem +
+      ' <span style="font-size:12.5px;font-weight:400;color:var(--ink-soft)">&middot; ' +
+      TT.hrs(contact) + ' of timetabled contact per week &middot; ' + totalCr + ' credits</span></h3>';
+
+    out += '<table class="data-table"><thead><tr><th>Code</th><th>Course</th><th>Type</th>' +
+      '<th class="num">Credits</th><th class="num">Hours / week</th><th>On the grid</th></tr></thead><tbody>' +
+      cov.map(function(c){
+        return '<tr>' +
+          '<td class="code">' + c.course.code + '</td>' +
+          '<td>' + c.course.title + '</td>' +
+          '<td style="font-size:12px;color:var(--ink-soft)">' + c.course.type + '</td>' +
+          '<td class="num">' + c.course.credits + '</td>' +
+          '<td class="num">' + (c.minutes ? TT.hrs(c.minutes) : '&mdash;') + '</td>' +
+          '<td>' + (c.present
+            ? '<span class="pill ok">Scheduled</span>'
+            : (c.course.type === 'experiential'
+                ? '<span class="pill mute">Not timetabled &mdash; experiential</span>'
+                : '<span class="pill warn">No slot</span>')) + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  });
+
+  /* ---------------- 3. how the week is spent ---------------- */
+  out += '<div class="section-title" style="margin-top:40px"><span class="num">3</span><div>' +
+    '<h2>How each week is actually spent</h2>' +
+    '<p class="sub">The weekly grid broken down by type of session.</p></div></div>';
+
+  out += '<table class="data-table"><thead><tr><th>Timetable</th><th>Breakdown of the week</th>' +
+    '<th class="num">Total</th></tr></thead><tbody>' +
+    RSPH.timetables.map(function(tt){
+      var p = RSPH.programmes[tt.prog];
+      var kl = TT.kindLoad(tt);
+      var tot = Object.keys(kl).reduce(function(a,k){ return a + kl[k]; }, 0) || 1;
+      var bar = '<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;' +
+        'border:1px solid var(--border);margin-bottom:8px">' +
+        Object.keys(kl).sort(function(a,b){ return kl[b]-kl[a]; }).map(function(k){
+          return '<div title="' + RSPH.kinds[k].label + ' — ' + TT.hrs(kl[k]) + '" style="width:' +
+                 (kl[k]/tot*100) + '%;background:' + RSPH.kinds[k].color + '"></div>';
+        }).join('') + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        Object.keys(kl).sort(function(a,b){ return kl[b]-kl[a]; }).map(function(k){
+          return '<span class="legend-chip" style="--k:' + RSPH.kinds[k].color + ';--kbg:' +
+            RSPH.kinds[k].bg + ';cursor:default">' + RSPH.kinds[k].label + ' &middot; ' +
+            TT.hrs(kl[k]) + '</span>';
+        }).join('') + '</div>';
+      return '<tr><td style="white-space:nowrap"><span class="pill ' + tt.prog + '">' + p.short +
+        '</span><br/><strong style="color:var(--indigo)">Semester ' + tt.sem + '</strong></td>' +
+        '<td>' + bar + '</td><td class="num">' + TT.hrs(tot) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+
+  /* ---------------- 4. source data quality ---------------- */
+  out += '<div class="section-title" style="margin-top:40px"><span class="num">4</span><div>' +
+    '<h2>Notes on the source documents</h2>' +
+    '<p class="sub">Ambiguities and blank fields found in the issued timetables, carried through ' +
+    'rather than silently filled in.</p></div></div>';
+
+  var anyFlag = false;
+  RSPH.timetables.forEach(function(tt){
+    if (!tt.flags || !tt.flags.length) return;
+    anyFlag = true;
+    var p = RSPH.programmes[tt.prog];
+    out += '<p class="note alert"><span class="note-lbl">' + p.short + ' &middot; Semester ' + tt.sem +
+      ' &mdash; ' + tt.source + '</span><ul>' +
+      tt.flags.map(function(f){ return '<li>' + f + '</li>'; }).join('') + '</ul></p>';
+  });
+  if (!anyFlag){
+    out += '<p class="note ok"><span class="note-lbl">Clean</span>No ambiguities recorded against the ' +
+      'published timetables.</p>';
+  }
+
+  /* ---------------- 5. what is still missing ---------------- */
+  out += '<div class="section-title" style="margin-top:40px"><span class="num">5</span><div>' +
+    '<h2>Timetables not yet issued</h2>' +
+    '<p class="sub">Semesters in the approved scheme with no timetable on this site.</p></div></div>';
+
+  var pend = RSPH.pending.map(function(x){
+    var p = RSPH.programmes[x.prog];
+    var cr = RSPH.courses.filter(function(c){ return c.prog===x.prog && c.sem===x.sem; });
+    return '<tr><td><span class="pill ' + x.prog + '">' + p.short + '</span></td>' +
+      '<td><strong style="color:var(--indigo)">Semester ' + x.sem + '</strong></td>' +
+      '<td class="num">' + cr.length + '</td>' +
+      '<td class="num">' + cr.reduce(function(a,c){ return a + c.credits; }, 0) + '</td>' +
+      '<td><a class="view-link" href="courses.html?p=' + x.prog + '">View the scheme &rarr;</a></td></tr>';
+  }).join('');
+
+  out += '<table class="data-table"><thead><tr><th>Programme</th><th>Semester</th>' +
+    '<th class="num">Courses</th><th class="num">Credits</th><th></th></tr></thead><tbody>' +
+    pend + '</tbody></table>' +
+    '<p class="note"><span class="note-lbl">Adding one</span>A new timetable is a single object appended to ' +
+    '<code>RSPH.timetables</code> in <code>assets/data.js</code> &mdash; the day rows, the slot grid and the ' +
+    'term dates. Every page on this site, including these checks, picks it up with no further edits.</p>';
+
+  document.getElementById('body').innerHTML = out;
+}).catch(function(e){ console.error(e); });
+</script>
+</body>
+</html>

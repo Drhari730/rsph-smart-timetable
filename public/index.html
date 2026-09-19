@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Timetable &mdash; MPH &amp; MHA | Ramaiah School of Public Health</title>
+<link rel="icon" type="image/svg+xml" href="assets/rsph_icon.svg"/>
+<link rel="stylesheet" href="assets/style.css"/>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+
+<div class="hero-glow">
+<section class="hero">
+  <div class="hero-gradient">
+    <img class="hero-watermark" src="assets/rsph_icon.svg" alt="" aria-hidden="true"/>
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <div class="hero-brand-row">
+          <span class="hero-brand-mark"><img src="assets/rsph_icon.svg" alt=""/></span>
+          <span class="hero-eyebrow">Ramaiah School of Public Health</span>
+        </div>
+        <h1>MPH &amp; MHA<br/>Smart Semester Timetable</h1>
+        <p>One live view of the issued timetables for both postgraduate programmes &mdash; the weekly grid, what is running right now, how many contact hours each course actually gets, who is teaching what, and an automatic check of every timetable against the approved Programme &amp; Course Specifications.</p>
+      </div>
+      <aside class="hero-panel">
+        <span class="hero-panel-label">Computed live</span>
+        <div class="hero-panel-figs">
+          <div><strong id="fig-sessions">0</strong><span>Scheduled sessions<br/>across both programmes</span></div>
+          <div><strong id="fig-hours">0</strong><span>Contact hours<br/>mapped per week</span></div>
+        </div>
+        <ul class="hero-panel-list">
+          <li>Current and next class, updated every minute</li>
+          <li>Venue &amp; faculty clash detection across programmes</li>
+          <li>One-click calendar (.ics) export and print</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card highlight"><span class="stat-num" data-count="2">0</span><span class="stat-label">Programmes</span><span class="stat-sub">MPH (097) &middot; MHA (098)</span></div>
+    <div class="stat-card"><span class="stat-num" id="stat-published" data-count="3">0</span><span class="stat-label">Timetables Published</span><span class="stat-sub">of 8 semesters across both</span></div>
+    <div class="stat-card"><span class="stat-num" data-count="162">0</span><span class="stat-label">Total Credits</span><span class="stat-sub">MPH 80 &middot; MHA 82</span></div>
+    <div class="stat-card"><span class="stat-num" id="stat-courses" data-count="0">0</span><span class="stat-label">Courses in Scheme</span><span class="stat-sub">Core, elective &amp; experiential</span></div>
+  </div>
+</section>
+</div>
+
+<!-- live now -->
+<section class="now-panel reveal" id="now-panel"></section>
+
+<div class="page-title-bar" style="border-bottom:none;padding-bottom:0;margin-bottom:6px;">
+  <span class="eyebrow smallcaps">Browse by programme</span>
+  <h1 style="font-size:24px;margin:6px 0;">Choose a semester</h1>
+  <p>Semesters with an issued timetable open straight onto the weekly grid. The others are listed so the scheme stays visible &mdash; they appear here automatically the moment their timetable is added.</p>
+</div>
+<div class="prog-grid" id="prog-grid"></div>
+
+<div class="page-title-bar" style="border-bottom:none;padding-bottom:0;margin-bottom:16px;">
+  <span class="eyebrow smallcaps">About this tool</span>
+  <h1 style="font-size:24px;margin:6px 0;">What makes it &ldquo;smart&rdquo;</h1>
+  <p>Nothing on this site is typed twice. Each issued timetable is entered once as data; every view below is derived from it when the page loads.</p>
+</div>
+<div class="about-grid">
+  <div class="about-card reveal">
+    <span class="about-num">01</span>
+    <h3>It knows where you are in the term</h3>
+    <p>Start and end dates drive a live term progress bar, the week number, and a &ldquo;right now / up next&rdquo; panel that highlights the running session in the grid. A semester that has not started yet says so rather than showing a misleading &ldquo;today&rdquo;.</p>
+  </div>
+  <div class="about-card reveal" style="transition-delay:90ms">
+    <span class="about-num">02</span>
+    <h3>It audits itself against the specifications</h3>
+    <p>Every timetable is checked against the approved scheme: which sanctioned courses actually appear on the grid, how many contact hours each one receives per week, and how that compares with its credit weighting. Gaps are listed, not hidden.</p>
+  </div>
+  <div class="about-card reveal" style="transition-delay:180ms">
+    <span class="about-num">03</span>
+    <h3>It catches clashes between programmes</h3>
+    <p>MPH and MHA cohorts share classrooms and faculty. The site compares every session in every published timetable and flags overlaps in clock time where the venue or the named teacher is the same &mdash; including across the two programmes.</p>
+  </div>
+</div>
+<p class="about-note"><strong>Source of truth:</strong> the grids reproduce the timetables issued by the School of Public Health. Course codes, titles and credits come from the MPH Programme &amp; Course Specifications 2022 (Approved) and the MHA Programme Structure &amp; Course Details 2022&ndash;2024. Where a timetable entry is ambiguous or a field is blank in the source, it is flagged on the <a href="insights.html" style="color:var(--wine);text-decoration:underline;">Insights &amp; Checks</a> page rather than filled in by guesswork.</p>
+
+<div class="mini-banner reveal">
+  <div class="txt"><strong>Teaching one of these sessions?</strong>The MPH course-notes portal carries the standardized module sequence, lecture topics and a printable brief for every MPH course.</div>
+  <a class="btn primary" href="courses.html">Open the course catalogue &rarr;</a>
+</div>
+
+</main>
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+RSPH_READY.then(function(){
+  TT.mountChrome('index.html');
+
+  /* ---- hero figures ---- */
+  var all = TT.allSessions().filter(function(s){ return s.kind !== 'lunch'; });
+  var mins = all.reduce(function(a,s){ return a + (RSPH.kinds[s.kind].teaching ? s.netMinutes : 0); }, 0);
+  document.getElementById('fig-sessions').textContent = all.length;
+  document.getElementById('fig-hours').textContent = Math.round(mins/60);
+  document.getElementById('stat-published').setAttribute('data-count', RSPH.timetables.length);
+  document.getElementById('stat-courses').setAttribute('data-count', RSPH.courses.length);
+
+  /* ---- live now panel ---- */
+  function renderNow(){
+    var L = TT.liveStatus();
+    var t = L.now.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
+    var d = L.now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    function item(entry, isNext){
+      var s = entry.s, k = RSPH.kinds[s.kind], p = RSPH.programmes[s.tt.prog];
+      var wk = TT.weekOfTerm(s.tt, L.now);
+      return '<div class="now-item" style="--k:'+k.color+'">' +
+        '<span class="now-prog">'+p.short+' &middot; Semester '+s.tt.sem+(wk?' &middot; Week '+wk:'')+'</span>' +
+        '<strong>'+s.title+(s.code?' <span style="font-size:11px;color:var(--wine)">'+s.code+'</span>':'')+'</strong>' +
+        '<span class="now-meta">'+s.startLabel+' &ndash; '+s.endLabel+' &middot; '+s.venue+
+          (s.faculty?' &middot; '+s.faculty:'')+
+          (isNext&&entry.inMin!=null?'<span class="now-in">in '+fmtIn(entry.inMin)+'</span>':'')+'</span>' +
+      '</div>';
+    }
+    function fmtIn(m){
+      if (m < 60) return m + ' min';
+      var h = Math.floor(m/60), r = m%60;
+      return h + ' h' + (r? ' ' + r + ' min':'');
+    }
+
+    var running = L.current.filter(function(e){ return e.running === true; });
+    var upNext  = L.next.filter(function(e){ return e.running === true; });
+
+    var cur = running.length ? running.map(function(e){return item(e,false);}).join('')
+      : '<p class="now-empty">No class is running right now in any semester that is currently in term.</p>';
+    var nxt = upNext.length ? upNext.map(function(e){return item(e,true);}).join('')
+      : '<p class="now-empty">Nothing further scheduled today.</p>';
+
+    /* semesters whose term has not started / has no dates */
+    var waiting = RSPH.timetables.filter(function(tt){ return TT.inTerm(tt, L.now) !== true; })
+      .map(function(tt){
+        var st = TT.parseDate(tt.start), p = RSPH.programmes[tt.prog];
+        if (!st) return p.short+' Sem '+tt.sem+' (no dates issued)';
+        if (L.now < st) {
+          var days = Math.ceil((st - L.now)/86400000);
+          return p.short+' Sem '+tt.sem+' starts '+TT.fmtDate(st)+' &mdash; in '+days+' day'+(days===1?'':'s');
+        }
+        return p.short+' Sem '+tt.sem+' ended '+TT.fmtDate(TT.parseDate(tt.end));
+      });
+
+    document.getElementById('now-panel').innerHTML =
+      '<div class="now-head"><h2>Right now</h2>' +
+        '<span class="now-clock">'+d+' &middot; <strong>'+t+'</strong></span></div>' +
+      '<div class="now-body">' +
+        '<div class="now-col"><span class="now-lbl">In session</span>'+cur+'</div>' +
+        '<div class="now-col"><span class="now-lbl">Up next today</span>'+nxt+'</div>' +
+      '</div>' +
+      (waiting.length ? '<div style="padding:0 24px 18px"><p class="note" style="margin:0">' +
+        '<span class="note-lbl">Not in term today</span>'+waiting.join(' &middot; ')+'</p></div>' : '');
+  }
+  renderNow();
+  setInterval(renderNow, 60000);
+
+  /* ---- programme cards ---- */
+  var now = new Date();
+  var html = Object.keys(RSPH.programmes).map(function(key){
+    var p = RSPH.programmes[key];
+    var chips = [1,2,3,4].map(function(sem){
+      var tt = TT.getTT(key, sem);
+      if (!tt) return '<span class="sem-chip pending"><strong>'+sem+'</strong>Not issued</span>';
+      var live = TT.inTerm(tt, now) === true;
+      var n = TT.sessions(tt).filter(function(s){return s.kind!=='lunch';}).length;
+      return '<a class="sem-chip'+(live?' live':'')+'" href="timetable.html?p='+key+'&s='+sem+'">' +
+        '<strong>'+sem+'</strong>' +
+        '<span class="chip-note">'+(live?'In term':n+' sessions')+'</span></a>';
+    }).join('');
+    var credits = RSPH.courses.filter(function(c){return c.prog===key;}).length;
+    return '<div class="prog-card reveal"><span class="accent" style="--a:'+p.accent+'"></span>' +
+      '<span class="pill '+key+'">'+p.short+' &middot; Programme code '+p.progCode+'</span>' +
+      '<h3>'+p.name+'</h3>' +
+      '<p class="prog-sub">'+p.duration+' &middot; '+p.totalCredits+' credits ('+p.creditSplit+') &middot; '+
+        credits+' courses in the scheme<br/>'+p.orientation+'</p>' +
+      '<div class="sem-chips">'+chips+'</div></div>';
+  }).join('');
+  document.getElementById('prog-grid').innerHTML = html;
+
+  TT.reveal();
+  TT.countUp();
+}).catch(function(e){ console.error(e); });
+</script>
+</body>
+</html>

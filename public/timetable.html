@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weekly Timetable | RSPH Smart Timetable</title>
+<link rel="icon" type="image/svg+xml" href="assets/rsph_icon.svg"/>
+<link rel="stylesheet" href="assets/style.css"/>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+
+<div class="page-title-bar">
+  <span class="eyebrow smallcaps">Issued semester timetable</span>
+  <h1 id="pg-title">Weekly Timetable</h1>
+  <p id="pg-sub">Select a programme and semester. The grid, the load figures and the calendar export are all generated from the issued timetable.</p>
+</div>
+
+<!-- controls -->
+<div class="controls no-print">
+  <div class="control-group">
+    <label>Programme</label>
+    <div class="seg" id="seg-prog"></div>
+  </div>
+  <div class="control-group">
+    <label>Semester</label>
+    <div class="seg" id="seg-sem"></div>
+  </div>
+  <div class="control-group">
+    <label>View</label>
+    <div class="seg" id="seg-view">
+      <button type="button" data-view="grid" aria-pressed="true">Weekly grid</button>
+      <button type="button" data-view="agenda" aria-pressed="false">Day by day</button>
+    </div>
+  </div>
+  <div class="control-group" style="flex:1;min-width:210px;">
+    <label>Find a course, activity or teacher</label>
+    <input class="ctrl-input" id="q" type="search" placeholder="e.g. Biostatistics, Journal Club, Mrinalini" style="width:100%"/>
+  </div>
+  <div class="ctrl-actions">
+    <button class="btn" id="btn-ics" type="button">&#128197; Add to calendar</button>
+    <button class="btn" id="btn-png" type="button">&#8681; Download PNG</button>
+    <button class="btn" id="btn-pdf" type="button">&#8681; Download PDF</button>
+    <button class="btn primary" id="btn-print" type="button">&#128438; Print</button>
+  </div>
+</div>
+
+<div id="body"></div>
+
+</main>
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+RSPH_READY.then(function(){
+  TT.mountChrome('timetable.html');
+
+  var params = new URLSearchParams(location.search);
+  var state = {
+    prog: params.get('p') || 'mph',
+    sem: +(params.get('s') || 3),
+    view: 'grid',
+    q: '',
+    kind: null
+  };
+  if (!RSPH.programmes[state.prog]) state.prog = 'mph';
+
+  /* ---------- segmented controls ---------- */
+  function buildSegs(){
+    document.getElementById('seg-prog').innerHTML = Object.keys(RSPH.programmes).map(function(k){
+      return '<button type="button" data-prog="'+k+'" aria-pressed="'+(k===state.prog)+'">' +
+             RSPH.programmes[k].short+'</button>';
+    }).join('');
+    document.getElementById('seg-sem').innerHTML = [1,2,3,4].map(function(s){
+      var has = !!TT.getTT(state.prog, s);
+      return '<button type="button" data-sem="'+s+'" aria-pressed="'+(s===state.sem)+'"' +
+             (has?'':' disabled title="Timetable not yet issued"')+'>Sem '+s+'</button>';
+    }).join('');
+  }
+
+  document.getElementById('seg-prog').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-prog]'); if (!b) return;
+    state.prog = b.getAttribute('data-prog');
+    // jump to the first semester of that programme that has a timetable
+    var first = [1,2,3,4].filter(function(s){ return TT.getTT(state.prog, s); })[0];
+    if (!TT.getTT(state.prog, state.sem)) state.sem = first || state.sem;
+    sync();
+  });
+  document.getElementById('seg-sem').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-sem]'); if (!b || b.disabled) return;
+    state.sem = +b.getAttribute('data-sem'); sync();
+  });
+  document.getElementById('seg-view').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-view]'); if (!b) return;
+    state.view = b.getAttribute('data-view');
+    TT.$$('#seg-view button').forEach(function(x){
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    render();
+  });
+  document.getElementById('q').addEventListener('input', function(e){
+    state.q = e.target.value.trim(); render();
+  });
+  document.getElementById('btn-print').addEventListener('click', function(){ window.print(); });
+  document.getElementById('btn-ics').addEventListener('click', function(){
+    var tt = TT.getTT(state.prog, state.sem);
+    if (tt) TT.downloadICS(tt);
+  });
+  document.getElementById('btn-png').addEventListener('click', function(){ exportImage('png'); });
+  document.getElementById('btn-pdf').addEventListener('click', function(){ exportImage('pdf'); });
+
+  /* Renders the currently-selected programme/semester/view into an offscreen
+     node (so the exported file matches exactly what's on screen, minus the
+     controls) and rasterises it with html2canvas. */
+  function exportImage(kind){
+    var tt = TT.getTT(state.prog, state.sem);
+    if (!tt) { alert('No timetable is issued for this selection yet.'); return; }
+    var p = RSPH.programmes[state.prog];
+    var btn = document.getElementById(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
+    var label = btn.textContent; btn.textContent = 'Preparing…'; btn.disabled = true;
+
+    var node = document.createElement('div');
+    node.style.cssText = 'position:fixed;left:-100000px;top:0;background:#FBF6F1;padding:26px;width:1360px;' +
+      "font-family:'Source Serif 4',Georgia,serif;color:#3D2B49;";
+    node.innerHTML =
+      '<div style="margin-bottom:16px">' +
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#C0383A;font-weight:700">' +
+          RSPH.meta.school + '</div>' +
+        '<div style="font-family:\'Playfair Display\',Georgia,serif;font-weight:700;font-size:24px;color:#381A6B;margin:6px 0">' +
+          p.name + ' &mdash; Semester ' + state.sem + '</div>' +
+        '<div style="font-size:12.5px;color:#7A6C7D">Batch ' + tt.batch + ' &middot; Academic Year ' + tt.ay +
+          ' &middot; ' + tt.venue + ' &middot; Downloaded ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '</div>' +
+      '</div>' +
+      TT.renderLegend(tt) +
+      (state.view === 'grid' ? TT.renderGrid(tt) : TT.renderAgenda(tt));
+    document.body.appendChild(node);
+
+    html2canvas(node, { scale: 2, backgroundColor: '#FBF6F1', windowWidth: 1360 }).then(function (canvas) {
+      var fname = 'RSPH-' + p.short + '-Sem' + state.sem;
+      if (kind === 'png') {
+        var a = document.createElement('a');
+        a.download = fname + '.png';
+        a.href = canvas.toDataURL('image/png');
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      } else {
+        var jsPDF = window.jspdf.jsPDF;
+        var orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
+        var pdf = new jsPDF({ orientation: orientation, unit: 'pt', format: 'a4' });
+        var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+        var margin = 24;
+        var imgW = pageW - margin * 2;
+        var imgH = canvas.height * imgW / canvas.width;
+        if (imgH > pageH - margin * 2) { imgH = pageH - margin * 2; imgW = canvas.width * imgH / canvas.height; }
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW, imgH);
+        pdf.save(fname + '.pdf');
+      }
+    }).catch(function (e) {
+      console.error(e); alert('Could not generate the file. Please try again.');
+    }).then(function () {
+      document.body.removeChild(node);
+      btn.textContent = label; btn.disabled = false;
+    });
+  }
+
+  function sync(){
+    history.replaceState(null, '', 'timetable.html?p='+state.prog+'&s='+state.sem);
+    buildSegs(); render();
+  }
+
+  /* ---------- main render ---------- */
+  function render(){
+    var tt = TT.getTT(state.prog, state.sem);
+    var p  = RSPH.programmes[state.prog];
+    document.getElementById('pg-title').innerHTML = p.name + ' &mdash; Semester ' + state.sem;
+
+    if (!tt){
+      document.getElementById('pg-sub').innerHTML =
+        'No timetable has been issued for this semester yet.';
+      document.getElementById('body').innerHTML =
+        '<div class="empty-state"><h3>Timetable not yet issued</h3>' +
+        '<p>The approved scheme for ' + p.short + ' Semester ' + state.sem + ' is listed on the ' +
+        '<a href="courses.html?p='+state.prog+'&s='+state.sem+'" style="color:var(--wine);text-decoration:underline">course catalogue</a>. ' +
+        'Once the School issues the timetable it is added to <code>assets/data.js</code> and this page fills in automatically.</p></div>';
+      return;
+    }
+
+    var now = new Date();
+    var live = TT.inTerm(tt, now);
+    var filter = { q: state.q, kind: state.kind };
+
+    document.getElementById('pg-sub').innerHTML =
+      'Batch ' + tt.batch + ' &middot; Academic Year ' + tt.ay + ' &middot; ' + tt.faculty +
+      '. Source: ' + tt.source + '.';
+
+    /* meta strip */
+    var contact = TT.weeklyContact(tt);
+    var nSess = TT.sessions(tt).filter(function(s){return s.kind!=='lunch';}).length;
+    var wk = TT.weekOfTerm(tt, now), tw = TT.termWeeks(tt);
+
+    var meta =
+      '<div class="tt-meta">' +
+        cell('Venue', tt.venue, 'As printed on the issued timetable') +
+        cell('Term', (tt.start ? TT.fmtDate(TT.parseDate(tt.start)) : 'Not issued') +
+             (tt.end ? ' &ndash; ' + TT.fmtDate(TT.parseDate(tt.end)) : ''),
+             tw ? tw + ' teaching weeks' : 'End date not issued') +
+        cell('Contact hours / week', TT.hrs(contact), nSess + ' scheduled sessions') +
+        cell('Status', live === true ? 'In term' : (live === false ? 'Out of term' : 'Dates not issued'),
+             live === true && wk ? 'Week ' + wk + (tw ? ' of ' + tw : '') : '&mdash;') +
+      '</div>';
+
+    /* term progress */
+    var term = '';
+    if (live === true && wk && tw){
+      var pct = Math.min(100, Math.round(wk / tw * 100));
+      term = '<div class="term-bar"><div class="term-line"><span>Week ' + wk + ' of ' + tw + '</span>' +
+             '<span>' + pct + '% of the semester elapsed</span></div>' +
+             '<div class="term-track"><div class="term-fill" style="width:' + pct + '%"></div></div></div>';
+    }
+
+    /* grid or agenda */
+    var main = state.view === 'grid' ? TT.renderGrid(tt, {filter: filter})
+                                     : TT.renderAgenda(tt, {filter: filter});
+
+    /* weekly load per course */
+    var load = TT.courseLoad(tt);
+    var max = load.reduce(function(a,r){ return Math.max(a, r.minutes); }, 0) || 1;
+    var loadRows = load.map(function(r){
+      var c = r.code ? TT.course(tt.prog, r.code) : null;
+      var col = '#381A6B';
+      return '<tr>' +
+        '<td class="code">' + (r.code || '&mdash;') + '</td>' +
+        '<td>' + r.title + (c ? '' : ' <span class="pill mute">activity</span>') + '</td>' +
+        '<td class="num">' + (c ? c.credits : '&mdash;') + '</td>' +
+        '<td class="num">' + r.count + '</td>' +
+        '<td><div class="bar-cell" style="--k:' + col + '">' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + (r.minutes/max*100) + '%"></div></div>' +
+          '<span class="bar-val">' + TT.hrs(r.minutes) + '</span></div></td>' +
+      '</tr>';
+    }).join('');
+
+    /* coverage of the approved scheme */
+    var cov = TT.coverage(state.prog, state.sem);
+    var missing = cov.filter(function(c){ return !c.present; });
+    var covNote = missing.length
+      ? '<p class="note warn"><span class="note-lbl">Scheme courses with no slot on this grid</span>' +
+        '<ul>' + missing.map(function(m){
+          return '<li><strong>' + m.course.code + '</strong> &mdash; ' + m.course.title +
+                 ' <span class="pill mute">' + m.course.credits + ' cr &middot; ' + m.course.type + '</span></li>';
+        }).join('') + '</ul></p>'
+      : '<p class="note ok"><span class="note-lbl">Scheme coverage</span>Every course in the approved Semester ' +
+        state.sem + ' scheme appears somewhere on this timetable.</p>';
+
+    /* source flags */
+    var flags = (tt.flags && tt.flags.length)
+      ? '<p class="note alert"><span class="note-lbl">Read this alongside the grid &mdash; notes on the source document</span><ul>' +
+        tt.flags.map(function(f){ return '<li>' + f + '</li>'; }).join('') + '</ul></p>'
+      : '';
+
+    document.getElementById('body').innerHTML =
+      meta + term + flags +
+      TT.renderLegend(tt) +
+      main +
+      '<div class="section-title" style="margin-top:44px"><span class="num">&sum;</span><div>' +
+        '<h2>Weekly load, computed from the grid</h2>' +
+        '<p class="sub">Lunch columns crossed by a spanning block are excluded from the totals.</p></div></div>' +
+      '<table class="data-table"><thead><tr>' +
+        '<th>Code</th><th>Course / activity</th><th class="num">Credits</th>' +
+        '<th class="num">Sessions</th><th>Hours per week</th></tr></thead>' +
+        '<tbody>' + loadRows + '</tbody></table>' +
+      covNote;
+
+    /* legend chips filter by kind */
+    TT.$$('.legend-chip').forEach(function(chip){
+      chip.setAttribute('aria-pressed', String(state.kind === chip.dataset.kind));
+      chip.addEventListener('click', function(){
+        state.kind = (state.kind === chip.dataset.kind) ? null : chip.dataset.kind;
+        render();
+      });
+    });
+  }
+
+  function cell(lbl, val, sub){
+    return '<div><span class="lbl">' + lbl + '</span><span class="val">' + val + '</span>' +
+           '<span class="sub">' + (sub || '') + '</span></div>';
+  }
+
+  buildSegs();
+  render();
+  setInterval(render, 60000);
+}).catch(function(e){ console.error(e); });
+</script>
+</body>
+</html>

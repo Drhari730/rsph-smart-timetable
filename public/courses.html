@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Course Catalogue | RSPH Smart Timetable</title>
+<link rel="icon" type="image/svg+xml" href="assets/rsph_icon.svg"/>
+<link rel="stylesheet" href="assets/style.css"/>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+
+<div class="page-title-bar">
+  <span class="eyebrow smallcaps">Approved scheme, both programmes</span>
+  <h1>Course Catalogue</h1>
+  <p>The sanctioned course structure for the MPH and the MHA, semester by semester, with the weekly timetable hours each course actually receives once a timetable has been issued.</p>
+</div>
+
+<div class="controls no-print">
+  <div class="control-group">
+    <label>Programme</label>
+    <div class="seg" id="seg-prog"></div>
+  </div>
+  <div class="control-group" style="flex:1;min-width:220px;">
+    <label>Search the catalogue</label>
+    <input class="ctrl-input" id="q" type="search" placeholder="Code or title &mdash; e.g. PHC503A, epidemiology, quality" style="width:100%"/>
+  </div>
+</div>
+
+<div id="body"></div>
+
+</main>
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+RSPH_READY.then(function(){
+  TT.mountChrome('courses.html');
+
+  var params = new URLSearchParams(location.search);
+  var state = { prog: params.get('p') || 'mph', q: '' };
+  if (!RSPH.programmes[state.prog]) state.prog = 'mph';
+
+  function buildSegs(){
+    document.getElementById('seg-prog').innerHTML = Object.keys(RSPH.programmes).map(function(k){
+      return '<button type="button" data-prog="'+k+'" aria-pressed="'+(k===state.prog)+'">' +
+             RSPH.programmes[k].short + '</button>';
+    }).join('');
+  }
+  document.getElementById('seg-prog').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-prog]'); if (!b) return;
+    state.prog = b.getAttribute('data-prog');
+    history.replaceState(null, '', 'courses.html?p=' + state.prog);
+    buildSegs(); render();
+  });
+  document.getElementById('q').addEventListener('input', function(e){
+    state.q = e.target.value.trim().toLowerCase(); render();
+  });
+
+  var TYPE_PILL = { core:'mute', elective:'warn', ogec:'warn', experiential:'ok' };
+  var TYPE_LABEL = { core:'Core', elective:'Elective', ogec:'Open/Generic', experiential:'Experiential' };
+
+  function render(){
+    var p = RSPH.programmes[state.prog];
+
+    /* minutes per course code, from every published timetable of this programme */
+    var mins = {};
+    RSPH.timetables.filter(function(tt){ return tt.prog === state.prog; }).forEach(function(tt){
+      TT.sessions(tt).forEach(function(s){
+        if (s.code) mins[s.code] = (mins[s.code] || 0) + s.netMinutes;
+      });
+    });
+
+    var html = '<div class="note" style="--c:' + p.accent + '"><span class="note-lbl">' + p.name +
+      ' &middot; Programme code ' + p.progCode + '</span>' + p.duration + ' &middot; <strong>' +
+      p.totalCredits + ' credits</strong> (' + p.creditSplit + ') &middot; ' + p.totalMarks +
+      ' marks &middot; ' + p.orientation + '</div>';
+
+    [1,2,3,4].forEach(function(sem){
+      var rows = RSPH.courses.filter(function(c){
+        if (c.prog !== state.prog || c.sem !== sem) return false;
+        if (!state.q) return true;
+        return (c.code + ' ' + TT.plain(c.title)).toLowerCase().indexOf(state.q) >= 0;
+      });
+      if (!rows.length) return;
+
+      var tt = TT.getTT(state.prog, sem);
+      var credits = RSPH.courses.filter(function(c){ return c.prog===state.prog && c.sem===sem; })
+                                .reduce(function(a,c){ return a + c.credits; }, 0);
+
+      html += '<div class="section-title" style="margin-top:34px"><span class="num">' + sem + '</span><div>' +
+        '<h2>Semester ' + sem + '</h2><p class="sub">' + credits + ' credits &middot; ' +
+        (tt ? '<a href="timetable.html?p=' + state.prog + '&s=' + sem + '" style="color:var(--wine)">timetable issued &rarr;</a>'
+            : 'timetable not yet issued') + '</p></div></div>';
+
+      html += '<table class="data-table"><thead><tr>' +
+        '<th>Code</th><th>Course title</th><th>Type</th><th class="num">Credits</th>' +
+        '<th class="num">Hours / week</th><th>Notes</th></tr></thead><tbody>';
+
+      rows.forEach(function(c){
+        var m = mins[c.code] || 0;
+        var notes = (c.notes && state.prog === 'mph')
+          ? '<a href="' + RSPH.meta.notesBase + c.notes + '" class="view-link">Course notes &rarr;</a>'
+          : '<span style="color:var(--ink-soft);font-size:12px">&mdash;</span>';
+        html += '<tr>' +
+          '<td class="code">' + c.code + '</td>' +
+          '<td>' + c.title + '</td>' +
+          '<td><span class="pill ' + TYPE_PILL[c.type] + '">' + TYPE_LABEL[c.type] + '</span></td>' +
+          '<td class="num">' + c.credits + '</td>' +
+          '<td class="num">' + (tt ? (m ? TT.hrs(m) : '<span class="pill warn">none</span>') :
+             '<span style="color:var(--ink-soft)">&mdash;</span>') + '</td>' +
+          '<td>' + notes + '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table>';
+    });
+
+    /* elective pool */
+    var pool = RSPH.electives[state.prog] || [];
+    var poolRows = pool.filter(function(e){
+      return !state.q || (e.code + ' ' + TT.plain(e.title)).toLowerCase().indexOf(state.q) >= 0;
+    });
+    if (poolRows.length){
+      html += '<div class="section-title" style="margin-top:38px"><span class="num">E</span><div>' +
+        '<h2>Elective pool</h2><p class="sub">Courses the MDEC / O-GEC slots on the timetable are drawn from.</p></div></div>' +
+        '<div class="ogec-pills" style="margin-bottom:40px">' +
+        poolRows.map(function(e){
+          return '<span class="ogec-pill"><strong style="color:var(--wine);font-size:11px;letter-spacing:.05em">' +
+                 e.code + '</strong> &nbsp;' + e.title + '</span>';
+        }).join('') + '</div>';
+    }
+
+    if (!html.match(/<tbody>/) && !poolRows.length){
+      html += '<div class="empty-state"><h3>No match</h3><p>Nothing in the ' + p.short +
+              ' scheme matches that search.</p></div>';
+    }
+
+    document.getElementById('body').innerHTML = html;
+  }
+
+  buildSegs();
+  render();
+}).catch(function(e){ console.error(e); });
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin | RSPH Smart Timetable</title>
+<link rel="icon" type="image/svg+xml" href="assets/rsph_icon.svg"/>
+<link rel="stylesheet" href="assets/style.css"/>
+<link rel="stylesheet" href="assets/admin.css"/>
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+
+<div class="page-title-bar">
+  <span class="eyebrow smallcaps">Content management</span>
+  <h1>Admin</h1>
+  <p>Add or edit courses, elective pools and semester timetables. Changes save straight to the database and appear on the public site immediately &mdash; no redeploy needed.</p>
+</div>
+
+<div id="login-panel" class="admin-card" style="max-width:420px">
+  <h2>Sign in</h2>
+  <form id="login-form">
+    <label>Username<input type="text" id="login-user" autocomplete="username" required/></label>
+    <label>Password<input type="password" id="login-pass" autocomplete="current-password" required/></label>
+    <p class="form-error" id="login-error"></p>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+</div>
+
+<div id="admin-panel" style="display:none">
+
+  <div class="controls no-print" style="justify-content:space-between">
+    <div class="seg" id="seg-section">
+      <button type="button" data-section="courses" aria-pressed="true">Courses</button>
+      <button type="button" data-section="electives" aria-pressed="false">Electives</button>
+      <button type="button" data-section="timetables" aria-pressed="false">Timetables</button>
+      <button type="button" data-section="account" aria-pressed="false">Account</button>
+    </div>
+    <div class="ctrl-actions">
+      <span id="whoami" style="font-size:12.5px;color:var(--ink-soft);align-self:center"></span>
+      <button class="btn" id="btn-logout" type="button">Sign out</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <section id="sec-courses"></section>
+  <section id="sec-electives" style="display:none"></section>
+  <section id="sec-timetables" style="display:none"></section>
+  <section id="sec-account" style="display:none"></section>
+
+</div>
+
+</main>
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
