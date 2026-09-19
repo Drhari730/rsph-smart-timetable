@@ -37,10 +37,10 @@ async function seedAll() {
     let order = 0;
     for (const c of seed.courses) {
       await client.query(
-        `INSERT INTO courses (prog, sem, code, title, credits, type, notes, sort_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        `INSERT INTO courses (prog, sem, code, title, credits, type, notes, faculty, sort_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          ON CONFLICT (prog, code) DO NOTHING`,
-        [c.prog, c.sem, c.code, c.title, c.credits, c.type, c.notes || null, order++]
+        [c.prog, c.sem, c.code, c.title, c.credits, c.type, c.notes || null, c.faculty || null, order++]
       );
     }
 

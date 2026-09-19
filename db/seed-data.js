@@ -82,9 +82,9 @@ const courses = [
   { prog:'mha', sem:2, code:'HAE5XXA', title:'Major Discipline Elective &ndash; 1 (MDEC-1)', credits:2, type:'elective' },
   { prog:'mha', sem:2, code:'HAL513C', title:'Hospital / Practical Training &ndash; 2', credits:4, type:'experiential' },
 
-  { prog:'mha', sem:3, code:'HAC601C', title:'Legal Aspects and Ethics in Healthcare', credits:3, type:'core' },
-  { prog:'mha', sem:3, code:'HAC602C', title:'Healthcare Analytics and Operational Research', credits:3, type:'core' },
-  { prog:'mha', sem:3, code:'HAC603C', title:'Marketing and Strategy Management in Healthcare', credits:4, type:'core' },
+  { prog:'mha', sem:3, code:'HAC601C', title:'Legal Aspects and Ethics in Healthcare', credits:3, type:'core', faculty:'Dr. Deepthi' },
+  { prog:'mha', sem:3, code:'HAC602C', title:'Healthcare Analytics and Operational Research', credits:3, type:'core', faculty:'Dr. V. V. Subba Rao Adhikari' },
+  { prog:'mha', sem:3, code:'HAC603C', title:'Marketing and Strategy Management in Healthcare', credits:4, type:'core', faculty:'Dr. Mrinalini' },
   { prog:'mha', sem:3, code:'HAE6XXA', title:'Major Discipline Elective &ndash; 2 (MDEC-2)', credits:2, type:'elective' },
   { prog:'mha', sem:3, code:'HAP605C', title:'Project Work', credits:6, type:'experiential' },
   { prog:'mha', sem:3, code:'HAL606C', title:'Hospital / Practical Training &ndash; 3', credits:4, type:'experiential' },

@@ -25,9 +25,12 @@ CREATE TABLE IF NOT EXISTS courses (
   credits    NUMERIC NOT NULL DEFAULT 0,
   type       TEXT NOT NULL DEFAULT 'core',   -- core | elective | ogec | experiential
   notes      TEXT,                            -- optional relative link to a course-notes page
+  faculty    TEXT,                            -- who is in charge of this subject (for load/appraisal)
   sort_order INT NOT NULL DEFAULT 0,
   UNIQUE(prog, code)
 );
+-- Added after the first release; safe to run again on an already-existing table.
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS faculty TEXT;
 
 CREATE TABLE IF NOT EXISTS electives (
   id         SERIAL PRIMARY KEY,

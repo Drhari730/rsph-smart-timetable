@@ -119,6 +119,11 @@ function renderGuide() {
     guideStep('&#9998;', 'Edit a course',
       '<p>Click <strong>Edit</strong> on its row. The form at the top fills in with that course&rsquo;s details &mdash; change ' +
       'whatever you need and click <strong>Save changes</strong>, or <strong>Cancel</strong> to leave it as it was.</p>') +
+    guideStep('&#128100;', '&ldquo;Faculty in charge of this subject&rdquo;',
+      '<p>This is the field the <strong>Faculty Load</strong> tab uses to total up load hours automatically. Type in whoever ' +
+      'owns that subject &mdash; once every course has someone assigned, Faculty Load shows each person&rsquo;s subjects with ' +
+      'their credits, weekly hours and hours for the semester, computed from that subject&rsquo;s own timetable rather than typed ' +
+      'in by hand. Useful for year-end appraisal write-ups.</p>') +
     guideStep('&#128465;', 'Delete a course',
       '<p>Click <strong>Delete</strong> on its row and confirm. This only removes it from the catalogue &mdash; if it&rsquo;s ' +
       'still referenced by a code on a timetable, that session will just show without a credits/notes link.</p>') +
@@ -166,10 +171,13 @@ function renderGuide() {
 
   html += '<div class="admin-card"><h2>Faculty Load &amp; Insights &amp; Checks</h2><div class="lecture-guide" style="padding:0">' +
     guideStep('&#128202;', 'Nothing to edit here',
-      '<p>Both tabs are read-only and recompute themselves from whatever is in Courses, Electives and Timetables. ' +
-      '<strong>Faculty Load</strong> rolls up who is teaching what and how many hours a week. <strong>Insights &amp; Checks</strong> ' +
-      'flags venue/teacher clashes, compares timetabled hours against each course&rsquo;s approved credits, and lists any semester ' +
-      'in the scheme that still has no timetable. If something looks wrong here, the fix is always back in the Timetables tab.</p>') +
+      '<p>Both tabs are read-only and recompute themselves from whatever is in Courses, Electives and Timetables &mdash; there is ' +
+      'nothing to type on either one. <strong>Faculty Load</strong> opens on <em>Load by Subject</em>: every subject with a ' +
+      '&ldquo;Faculty in charge&rdquo; set on the Courses tab, rolled up per person into total credits, weekly hours and hours for ' +
+      'the semester (the numbers to lift straight into an appraisal form). Underneath that is the school&rsquo;s own record of ' +
+      'who the issued timetable itself names, session by session. <strong>Insights &amp; Checks</strong> flags venue/teacher clashes, ' +
+      'compares timetabled hours against each course&rsquo;s approved credits, and lists any semester in the scheme that still has ' +
+      'no timetable. If something looks wrong here, the fix is always back in the Courses or Timetables tab.</p>') +
   '</div></div>';
 
   html += '<div class="admin-card"><h2>Account</h2><div class="lecture-guide" style="padding:0">' +
@@ -204,6 +212,8 @@ function courseForm(c) {
       field('Course-notes link (optional)', '<input id="cf-notes" value="' + escAttr(c.notes) + '" placeholder="e.g. phc501a.html"/>') +
     '</div>' +
     field('Title', '<input id="cf-title" value="' + escAttr(TT.plain(c.title || '')) + '" placeholder="Full course title"/>') +
+    field('Faculty in charge of this subject (used to auto-total load hours below)',
+      '<input id="cf-faculty" value="' + escAttr(c.faculty) + '" placeholder="e.g. Dr. Mrinalini &mdash; leave blank if not yet assigned"/>') +
     '<p class="form-error" id="cf-error"></p>' +
     '<div class="actions">' +
       '<button class="btn primary" id="cf-save" type="button">' + (c.id ? 'Save changes' : 'Add course') + '</button>' +
@@ -229,10 +239,11 @@ function renderCourses(rows) {
       if (!list.length) return;
       html += '<h3 style="margin-top:22px">' + RSPH.programmes[prog].short + ' &middot; Semester ' + sem + '</h3>';
       html += '<table class="data-table"><thead><tr><th>Code</th><th>Title</th><th>Type</th>' +
-        '<th class="num">Credits</th><th>Notes link</th><th></th></tr></thead><tbody>' +
+        '<th class="num">Credits</th><th>Faculty</th><th>Notes link</th><th></th></tr></thead><tbody>' +
         list.map(function (c) {
           return '<tr><td class="code">' + c.code + '</td><td>' + c.title + '</td>' +
             '<td>' + c.type + '</td><td class="num">' + c.credits + '</td>' +
+            '<td style="font-size:12.5px">' + (c.faculty || '<span style="color:var(--warn)">Unassigned</span>') + '</td>' +
             '<td style="font-size:12px;color:var(--ink-soft)">' + (c.notes || '&mdash;') + '</td>' +
             '<td class="row-actions">' +
               '<button class="edit" data-edit="' + c.id + '">Edit</button>' +
@@ -276,7 +287,8 @@ function wireCourseForm(rows) {
       type: document.getElementById('cf-type').value,
       credits: parseFloat(document.getElementById('cf-credits').value) || 0,
       notes: document.getElementById('cf-notes').value.trim() || null,
-      title: document.getElementById('cf-title').value.trim()
+      title: document.getElementById('cf-title').value.trim(),
+      faculty: document.getElementById('cf-faculty').value.trim() || null
     };
     var err = document.getElementById('cf-error');
     if (!body.code || !body.title) { err.textContent = 'Code and title are required.'; return; }
@@ -718,10 +730,78 @@ function renderFaculty() {
     return '<div><span class="lbl">' + lbl + '</span><span class="val">' + val + '</span><span class="sub">' + sub + '</span></div>';
   }
 
+  /* ---- subject-level mapping: Courses tab's "Faculty in charge" field,
+     joined against each course's own timetabled hours — the automated load
+     total for appraisal write-ups. Independent of whether the issued
+     timetable itself names anyone in a block. ---- */
+  var subjectRows = [];
+  var bySem = {};
+  RSPH.courses.forEach(function (c) { (bySem[c.prog + ':' + c.sem] = bySem[c.prog + ':' + c.sem] || []).push(c); });
+  Object.keys(bySem).forEach(function (key) {
+    var parts = key.split(':'), prog = parts[0], sem = +parts[1];
+    var cov = TT.coverage(prog, sem);
+    var tt = TT.getTT(prog, sem);
+    var weeks = tt ? TT.termWeeks(tt) : null;
+    cov.forEach(function (c) {
+      subjectRows.push({
+        faculty: c.course.faculty || null, prog: prog, sem: sem,
+        code: c.course.code, title: c.course.title, credits: c.course.credits,
+        minutes: c.minutes, present: c.present, weeks: weeks
+      });
+    });
+  });
+  var byFacultySubject = {};
+  subjectRows.forEach(function (r) { if (r.faculty) (byFacultySubject[r.faculty] = byFacultySubject[r.faculty] || []).push(r); });
+  var unassignedSubjects = subjectRows.filter(function (r) { return !r.faculty; });
+  var facultyNames = Object.keys(byFacultySubject).sort();
+
+  var subjectSection = facultyNames.length ? facultyNames.map(function (name) {
+    var list = byFacultySubject[name];
+    var totalCredits = list.reduce(function (a, r) { return a + r.credits; }, 0);
+    var totalMin = list.reduce(function (a, r) { return a + r.minutes; }, 0);
+    var anyWeeksUnknown = list.some(function (r) { return r.minutes && r.weeks == null; });
+    var totalSemHours = list.reduce(function (a, r) { return a + (r.weeks ? (r.minutes / 60 * r.weeks) : 0); }, 0);
+    var rows = list.map(function (r) {
+      var p = RSPH.programmes[r.prog];
+      return '<tr><td><span class="pill ' + r.prog + '">' + p.short + '</span> Sem ' + r.sem + '</td>' +
+        '<td class="code">' + r.code + '</td><td>' + r.title + '</td>' +
+        '<td class="num">' + r.credits + '</td>' +
+        '<td class="num">' + (r.minutes ? TT.hrs(r.minutes) : (r.present === false ? '<span class="pill mute">No timetable</span>' : '&mdash;')) + '</td>' +
+        '<td class="num">' + (r.weeks && r.minutes ? Math.round(r.minutes / 60 * r.weeks * 10) / 10 + ' h' : '&mdash;') + '</td></tr>';
+    }).join('');
+    return '<details class="module-block" style="margin-bottom:12px">' +
+      '<summary><span class="modtitle"><strong style="color:var(--indigo)">' + name + '</strong></span>' +
+      '<span class="modtitle-right"><span class="mod-duration">' + list.length + ' subject' + (list.length === 1 ? '' : 's') +
+        ' &middot; ' + totalCredits + ' credits &middot; ' + TT.hrs(totalMin) + '/wk' +
+        (totalSemHours ? ' &middot; ~' + Math.round(totalSemHours) + ' h this semester' + (anyWeeksUnknown ? '*' : '') : '') +
+        '</span><span class="chev">&#9660;</span></span></summary>' +
+      '<div style="padding:12px 20px 16px"><table class="data-table" style="margin-bottom:0"><thead><tr>' +
+      '<th>Programme &amp; sem</th><th>Code</th><th>Subject</th><th class="num">Credits</th>' +
+      '<th class="num">Hours / week</th><th class="num">Hours this semester</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '</details>';
+  }).join('') : '';
+
   document.getElementById('sec-faculty').innerHTML =
-    '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0"><span class="eyebrow smallcaps">Who is on the grid</span>' +
-    '<h1 style="font-size:22px;margin:6px 0">Teaching Load by Owner</h1>' +
-    '<p style="font-size:13.5px">Every session that names a teacher or an owning department, rolled up across both programmes.</p></div>' +
+    '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0"><span class="eyebrow smallcaps">For appraisal write-ups</span>' +
+    '<h1 style="font-size:22px;margin:6px 0">Load by Subject</h1>' +
+    '<p style="font-size:13.5px">Set &ldquo;Faculty in charge&rdquo; on each subject in the Courses tab; the credits and ' +
+    'weekly/semester hours below are computed automatically from that subject&rsquo;s own timetable, not typed in twice.</p></div>' +
+    (facultyNames.length ? subjectSection : '<p class="note"><span class="note-lbl">No subjects assigned yet</span>' +
+      'Open the <strong>Courses</strong> tab and fill in &ldquo;Faculty in charge of this subject&rdquo; for each one &mdash; ' +
+      'the totals here fill in as soon as you do.</p>') +
+    (unassignedSubjects.length
+      ? '<p class="note warn"><span class="note-lbl">' + unassignedSubjects.length + ' subject' +
+        (unassignedSubjects.length === 1 ? '' : 's') + ' with no faculty assigned</span>' +
+        unassignedSubjects.map(function (r) { return r.code + ' &middot; ' + r.title; }).join('<br/>') + '</p>'
+      : '') +
+    '<p class="note"><span class="note-lbl">How this is counted</span>&ldquo;Hours this semester&rdquo; = weekly contact ' +
+    'hours &times; the number of teaching weeks between that timetable&rsquo;s start and end date &mdash; shown only where ' +
+    'both dates are on record (a * marks a total where at least one of the faculty&rsquo;s subjects is missing an end date, ' +
+    'so that subject is left out of the semester total, not guessed at).</p>' +
+
+    '<div class="section-title" style="margin-top:40px"><span class="num">&sect;</span><div>' +
+    '<h2>Who the issued timetable itself names</h2><p class="sub">From the timetable documents directly, independent of the ' +
+    'subject mapping above &mdash; the school&rsquo;s own printed record of who takes each session.</p></div></div>' +
     '<div class="tt-meta">' +
       m('Named teachers', named.length, 'Individuals on the issued grids') +
       m('Departmental owners', depts.length, 'Sessions owned by a school/faculty') +
