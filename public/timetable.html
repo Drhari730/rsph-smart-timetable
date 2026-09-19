@@ -33,6 +33,7 @@
     <div class="seg" id="seg-view">
       <button type="button" data-view="grid" aria-pressed="true">Weekly grid</button>
       <button type="button" data-view="agenda" aria-pressed="false">Day by day</button>
+      <button type="button" data-view="calendar" aria-pressed="false">Calendar</button>
     </div>
   </div>
   <div class="control-group" style="flex:1;min-width:210px;">
@@ -66,7 +67,8 @@ RSPH_READY.then(function(){
     sem: +(params.get('s') || 3),
     view: 'grid',
     q: '',
-    kind: null
+    kind: null,
+    month: null // {y,m} — set on first render once the timetable is known
   };
   if (!RSPH.programmes[state.prog]) state.prog = 'mph';
 
@@ -137,7 +139,13 @@ RSPH_READY.then(function(){
           ' &middot; ' + tt.venue + ' &middot; Downloaded ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '</div>' +
       '</div>' +
       TT.renderLegend(tt) +
-      (state.view === 'grid' ? TT.renderGrid(tt) : TT.renderAgenda(tt));
+      (state.view === 'grid' ? TT.renderGrid(tt)
+        : state.view === 'agenda' ? TT.renderAgenda(tt)
+        : (function(){
+            var mm = state.month || TT.monthList(tt)[0];
+            return '<div class="month-title" style="margin-bottom:10px">' + TT.MONTH_NAMES[mm.m] + ' ' + mm.y + '</div>' +
+                   TT.renderMonthCalendar(tt, mm.y, mm.m);
+          })());
     document.body.appendChild(node);
 
     html2canvas(node, { scale: 2, backgroundColor: '#FBF6F1', windowWidth: 1360 }).then(function (canvas) {
@@ -192,6 +200,11 @@ RSPH_READY.then(function(){
     var now = new Date();
     var live = TT.inTerm(tt, now);
     var filter = { q: state.q, kind: state.kind };
+    var months = TT.monthList(tt);
+    if (!state.month || !months.some(function(mo){ return mo.y===state.month.y && mo.m===state.month.m; })) {
+      var todayIdx = months.findIndex(function(mo){ return mo.y===now.getFullYear() && mo.m===now.getMonth(); });
+      state.month = months[todayIdx >= 0 ? todayIdx : 0];
+    }
 
     document.getElementById('pg-sub').innerHTML =
       'Batch ' + tt.batch + ' &middot; Academic Year ' + tt.ay + ' &middot; ' + tt.faculty +
@@ -222,9 +235,20 @@ RSPH_READY.then(function(){
              '<div class="term-track"><div class="term-fill" style="width:' + pct + '%"></div></div></div>';
     }
 
-    /* grid or agenda */
-    var main = state.view === 'grid' ? TT.renderGrid(tt, {filter: filter})
-                                     : TT.renderAgenda(tt, {filter: filter});
+    /* grid, agenda or calendar */
+    var monthNav = '';
+    var main;
+    if (state.view === 'calendar') {
+      monthNav = '<div class="month-nav no-print">' +
+        '<span class="month-title">' + TT.MONTH_NAMES[state.month.m] + ' ' + state.month.y + '</span>' +
+        '<div class="month-tabs">' + months.map(function(mo){
+          return '<button type="button" class="month-tab' + (mo.y===state.month.y && mo.m===state.month.m ? ' active' : '') +
+                 '" data-y="' + mo.y + '" data-m="' + mo.m + '">' + TT.MONTH_NAMES[mo.m].slice(0,3) + ' ' + mo.y + '</button>';
+        }).join('') + '</div></div>';
+      main = TT.renderMonthCalendar(tt, state.month.y, state.month.m);
+    } else {
+      main = state.view === 'grid' ? TT.renderGrid(tt, {filter: filter}) : TT.renderAgenda(tt, {filter: filter});
+    }
 
     /* weekly load per course */
     var load = TT.courseLoad(tt);
@@ -261,10 +285,7 @@ RSPH_READY.then(function(){
         tt.flags.map(function(f){ return '<li>' + f + '</li>'; }).join('') + '</ul></p>'
       : '';
 
-    document.getElementById('body').innerHTML =
-      meta + term + flags +
-      TT.renderLegend(tt) +
-      main +
+    var loadSection = state.view === 'calendar' ? '' :
       '<div class="section-title" style="margin-top:44px"><span class="num">&sum;</span><div>' +
         '<h2>Weekly load, computed from the grid</h2>' +
         '<p class="sub">Lunch columns crossed by a spanning block are excluded from the totals.</p></div></div>' +
@@ -274,11 +295,26 @@ RSPH_READY.then(function(){
         '<tbody>' + loadRows + '</tbody></table>' +
       covNote;
 
-    /* legend chips filter by kind */
+    document.getElementById('body').innerHTML =
+      meta + term + flags +
+      TT.renderLegend(tt) +
+      monthNav +
+      main +
+      loadSection;
+
+    /* legend chips filter by kind (grid / agenda views only) */
     TT.$$('.legend-chip').forEach(function(chip){
       chip.setAttribute('aria-pressed', String(state.kind === chip.dataset.kind));
       chip.addEventListener('click', function(){
         state.kind = (state.kind === chip.dataset.kind) ? null : chip.dataset.kind;
+        render();
+      });
+    });
+
+    /* month tabs (calendar view only) */
+    TT.$$('.month-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        state.month = { y: +tab.getAttribute('data-y'), m: +tab.getAttribute('data-m') };
         render();
       });
     });

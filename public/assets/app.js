@@ -423,17 +423,89 @@ function renderLegend(tt) {
     '</div>';
 }
 
+/* ===========================================================================
+   Month calendar — the same recurring weekly pattern laid over real dates.
+   =========================================================================== */
+
+/* The list of {y, m} (m = 0-indexed) months worth showing for a timetable:
+   from its start month (or September of the current year if no start date
+   is on record) through its end month (or three months later, i.e.
+   September-December, if no end date is on record). Capped at 8 months. */
+function monthList(tt) {
+  const now = new Date();
+  const s = tt.start ? parseDate(tt.start) : new Date(now.getFullYear(), 8, 1);
+  const e = tt.end ? parseDate(tt.end) : new Date(s.getFullYear(), s.getMonth() + 3, 1);
+  const months = [];
+  let y = s.getFullYear(), m = s.getMonth();
+  const endKey = e.getFullYear() * 12 + e.getMonth();
+  while (y * 12 + m <= endKey && months.length < 8) {
+    months.push({ y, m });
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  return months;
+}
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function sameYMD(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/* A standard Mon-Sun month grid. Days outside the timetable's own term dates
+   (when known) are dimmed rather than hidden, so the shape of the month
+   stays recognisable. */
+function renderMonthCalendar(tt, year, month) {
+  const first = new Date(year, month, 1);
+  const startOffset = (first.getDay() + 6) % 7; // 0 = Monday
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  const termStart = tt.start ? parseDate(tt.start) : null;
+  const termEnd = tt.end ? parseDate(tt.end) : null;
+  const today = new Date();
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push({ day: prevMonthDays - startOffset + i + 1, other: true });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, date: new Date(year, month, d) });
+  let nextDay = 1;
+  while (cells.length % 7 !== 0) cells.push({ day: nextDay++, other: true });
+
+  let h = '<div class="cal-wrap"><div class="cal-head">' +
+    RSPH.DAYS.map(d => '<div class="cal-dow">' + d + '</div>').join('') +
+    '</div><div class="cal-grid">';
+
+  cells.forEach(c => {
+    if (c.other || !c.date) { h += '<div class="cal-cell other-month"><span class="cal-daynum">' + c.day + '</span></div>'; return; }
+    const dayKey = RSPH.DAYS[(c.date.getDay() + 6) % 7];
+    const inTerm = (!termStart || c.date >= termStart) && (!termEnd || c.date <= termEnd);
+    const blocks = (tt.days[dayKey] || []).filter(b => b.k !== 'lunch').slice().sort((a, b) => a.i - b.i);
+    const isToday = sameYMD(c.date, today);
+    h += '<div class="cal-cell' + (inTerm ? '' : ' out-term') + (isToday ? ' is-today' : '') + '">' +
+      '<span class="cal-daynum">' + c.day + (isToday ? '<span class="cal-today-dot"></span>' : '') + '</span>' +
+      '<div class="cal-sessions">' + blocks.map(b => {
+        const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
+        const slot = tt.slots[b.i];
+        return '<div class="cal-chip" style="--k:' + k.color + ';--kbg:' + k.bg + '">' +
+          (slot ? '<span class="cal-chip-time">' + fmtHM(toMin(slot.s)) + '</span> ' : '') + b.t + '</div>';
+      }).join('') + '</div>' +
+      (inTerm ? '' : '<span class="cal-out-tag">Not in term</span>') +
+    '</div>';
+  });
+
+  h += '</div></div>';
+  return h;
+}
+
 /* ---------- shared chrome ------------------------------------------------ */
 function header(active) {
+  // Student-facing site: only the two pages students need. Faculty load and
+  // the data-quality/clash checks moved into the admin panel — not nav items
+  // here at all, so students never see them.
   const nav = [
-    ['index.html', 'Home'],
     ['timetable.html', 'Timetables'],
-    ['courses.html', 'Courses'],
-    ['faculty.html', 'Faculty Load'],
-    ['insights.html', 'Insights &amp; Checks']
+    ['courses.html', 'Courses']
   ];
   return '<header class="site-header"><div class="bar">' +
-    '<a href="index.html" class="brand"><img src="assets/rsph_logo.svg" alt="Ramaiah School of Public Health"/>' +
+    '<a href="timetable.html" class="brand"><img src="assets/rsph_logo.svg" alt="Ramaiah School of Public Health"/>' +
     '<span class="brand-text">Smart Timetable<br/>MPH &amp; MHA</span></a>' +
     '<nav class="mainnav">' + nav.map(n =>
       '<a class="mainnav-link' + (n[0] === active ? ' active' : '') + '" href="' + n[0] + '">' + n[1] + '</a>'
@@ -515,6 +587,7 @@ global.TT = {
   liveStatus, courseLoad, kindLoad, weeklyContact, facultyLoad, clashes, coverage,
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
+  monthList, renderMonthCalendar, MONTH_NAMES,
   mountChrome, reveal, countUp
 };
 

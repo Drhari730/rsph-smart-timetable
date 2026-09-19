@@ -16,13 +16,16 @@ app.use(cors({ origin: true, credentials: true }));
 
 app.use('/api', api);
 
+// The student-facing site is just the timetable + course catalogue; there is
+// no separate marketing homepage, so "/" goes straight to the timetable.
+app.get('/', (req, res) => res.redirect('/timetable.html'));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Any non-API, non-file path falls back to index.html (keeps deep links tidy
-// if the site ever grows client-side routes).
+// Any other non-API, non-file path falls back to the timetable too.
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(__dirname, 'public', 'index.html'), err => { if (err) next(); });
+  res.sendFile(path.join(__dirname, 'public', 'timetable.html'), err => { if (err) next(); });
 });
 
 migrate()

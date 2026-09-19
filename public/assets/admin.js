@@ -80,12 +80,14 @@ function switchSection(name) {
   $$('#seg-section button').forEach(function (b) {
     b.setAttribute('aria-pressed', String(b.getAttribute('data-section') === name));
   });
-  ['courses', 'electives', 'timetables', 'account'].forEach(function (s) {
+  ['courses', 'electives', 'timetables', 'faculty', 'insights', 'account'].forEach(function (s) {
     document.getElementById('sec-' + s).style.display = (s === name) ? 'block' : 'none';
   });
   if (name === 'courses') loadCourses();
   if (name === 'electives') loadElectives();
   if (name === 'timetables') loadTimetables();
+  if (name === 'faculty') renderFaculty();
+  if (name === 'insights') renderInsights();
   if (name === 'account') renderAccount();
 }
 
@@ -567,6 +569,201 @@ function wireEditor() {
 
 function debounce(fn, ms) {
   var h; return function () { clearTimeout(h); var a = arguments; h = setTimeout(function () { fn.apply(null, a); }, ms); };
+}
+
+/* ===========================================================================
+   FACULTY LOAD — moved here from the old public faculty.html; students don't
+   need to see who's teaching what, but the course coordinator does.
+   =========================================================================== */
+function renderFaculty() {
+  var load = TT.facultyLoad();
+  var named = load.filter(function (f) { return f.named; });
+  var depts = load.filter(function (f) { return !f.named; });
+  var all = TT.allSessions().filter(function (s) { return s.kind !== 'lunch'; });
+  var unattributed = all.filter(function (s) { return !s.faculty; });
+  var max = load.reduce(function (a, f) { return Math.max(a, f.minutes); }, 0) || 1;
+
+  function table(list, caption) {
+    if (!list.length) return '';
+    return '<table class="data-table"><thead><tr>' +
+      '<th>' + caption + '</th><th class="num">Sessions</th><th>Programmes</th>' +
+      '<th>Hours per week</th><th>What they hold</th></tr></thead><tbody>' +
+      list.map(function (f) {
+        var progs = {};
+        f.sessions.forEach(function (s) { progs[s.tt.prog] = true; });
+        var what = {};
+        f.sessions.forEach(function (s) { what[TT.plain(s.title)] = (what[TT.plain(s.title)] || 0) + 1; });
+        return '<tr>' +
+          '<td><strong style="color:var(--indigo)">' + f.name + '</strong></td>' +
+          '<td class="num">' + f.sessions.length + '</td>' +
+          '<td>' + Object.keys(progs).map(function (p) {
+            return '<span class="pill ' + p + '">' + RSPH.programmes[p].short + '</span>';
+          }).join(' ') + '</td>' +
+          '<td><div class="bar-cell" style="--k:var(--indigo)">' +
+            '<div class="bar-track"><div class="bar-fill" style="width:' + (f.minutes / max * 100) + '%"></div></div>' +
+            '<span class="bar-val">' + TT.hrs(f.minutes) + '</span></div></td>' +
+          '<td style="font-size:12.5px;color:var(--ink-soft)">' +
+            Object.keys(what).map(function (t) { return t + (what[t] > 1 ? ' &times;' + what[t] : ''); }).join('<br/>') +
+          '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  var byTT = {};
+  unattributed.forEach(function (s) { (byTT[s.tt.id] = byTT[s.tt.id] || []).push(s); });
+  var unattrHTML = Object.keys(byTT).map(function (id) {
+    var list = byTT[id], tt = list[0].tt, p = RSPH.programmes[tt.prog];
+    var mins = list.reduce(function (a, s) { return a + s.netMinutes; }, 0);
+    var titles = {};
+    list.forEach(function (s) { titles[TT.plain(s.title)] = (titles[TT.plain(s.title)] || 0) + 1; });
+    return '<tr><td><span class="pill ' + tt.prog + '">' + p.short + '</span> Semester ' + tt.sem + '</td>' +
+      '<td class="num">' + list.length + '</td><td class="num">' + TT.hrs(mins) + '</td>' +
+      '<td style="font-size:12.5px;color:var(--ink-soft)">' +
+        Object.keys(titles).sort().map(function (t) { return t + (titles[t] > 1 ? ' &times;' + titles[t] : ''); }).join(' &middot; ') +
+      '</td></tr>';
+  }).join('');
+
+  var attributedMin = load.reduce(function (a, f) { return a + f.minutes; }, 0);
+  var totalMin = all.reduce(function (a, s) { return a + s.netMinutes; }, 0);
+  var pct = totalMin ? Math.round(attributedMin / totalMin * 100) : 0;
+
+  function m(lbl, val, sub) {
+    return '<div><span class="lbl">' + lbl + '</span><span class="val">' + val + '</span><span class="sub">' + sub + '</span></div>';
+  }
+
+  document.getElementById('sec-faculty').innerHTML =
+    '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0"><span class="eyebrow smallcaps">Who is on the grid</span>' +
+    '<h1 style="font-size:22px;margin:6px 0">Teaching Load by Owner</h1>' +
+    '<p style="font-size:13.5px">Every session that names a teacher or an owning department, rolled up across both programmes.</p></div>' +
+    '<div class="tt-meta">' +
+      m('Named teachers', named.length, 'Individuals on the issued grids') +
+      m('Departmental owners', depts.length, 'Sessions owned by a school/faculty') +
+      m('Attributed load', pct + '%', TT.hrs(attributedMin) + ' of ' + TT.hrs(totalMin) + ' per week') +
+      m('Unattributed sessions', unattributed.length, 'No teacher named in the source') +
+    '</div>' +
+    (named.length ? '<h3 style="margin-top:26px">Named faculty</h3>' + table(named, 'Faculty member') : '') +
+    (depts.length ? '<h3 style="margin-top:26px">Sessions owned by a department</h3>' + table(depts, 'Owning department') : '') +
+    '<h3 style="margin-top:26px">Sessions with no owner named</h3>' +
+    (unattrHTML
+      ? '<table class="data-table"><thead><tr><th>Timetable</th><th class="num">Sessions</th>' +
+        '<th class="num">Hours / week</th><th>Sessions</th></tr></thead><tbody>' + unattrHTML + '</tbody></table>'
+      : '<p class="note ok"><span class="note-lbl">Fully allocated</span>Every session names a teacher or an owning department.</p>') +
+    '<p class="note"><span class="note-lbl">How this is counted</span>Hours are the clock hours of each block, excluding ' +
+    'any lunch column a long block crosses. A block is credited to whoever the issued timetable names in brackets beneath ' +
+    'the session title; nothing here is inferred.</p>';
+}
+
+/* ===========================================================================
+   INSIGHTS & CHECKS — moved here from the old public insights.html.
+   =========================================================================== */
+function renderInsights() {
+  var out = '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0"><span class="eyebrow smallcaps">Automatic checks</span>' +
+    '<h1 style="font-size:22px;margin:6px 0">Insights &amp; Checks</h1>' +
+    '<p style="font-size:13.5px">Every published timetable, checked against every other timetable and against the approved specifications.</p></div>';
+
+  var cl = TT.clashes();
+  out += '<h3>1. Clash detection</h3>';
+  if (!cl.length) {
+    out += '<p class="note ok"><span class="note-lbl">No clashes found</span>No two sessions compete for the same room or teacher.</p>';
+  } else {
+    var groups = {}, order = [];
+    cl.forEach(function (c) {
+      var key = [c.a.tt.id, c.b.tt.id].sort().join('|') + '|' + c.reason;
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(c);
+    });
+    out += order.map(function (key) {
+      var list = groups[key], first = list[0];
+      var pA = RSPH.programmes[first.a.tt.prog], pB = RSPH.programmes[first.b.tt.prog];
+      var totalMin = list.reduce(function (a, c) { return a + (c.to - c.from); }, 0);
+      var certain = list.some(function (c) { return c.certain; });
+      var rows = list.map(function (c) {
+        function side(s) {
+          return '<strong style="color:var(--indigo)">' + s.title + '</strong>' + (s.code ? ' <span class="code">' + s.code + '</span>' : '') +
+            '<br/><span style="font-size:11.5px;color:var(--ink-soft)">' + s.startLabel + '&ndash;' + s.endLabel +
+            (s.faculty ? ' &middot; ' + s.faculty : '') + '</span>';
+        }
+        return '<tr><td><strong>' + RSPH.DAY_FULL[c.day] + '</strong></td><td>' + side(c.a) + '</td><td>' + side(c.b) + '</td></tr>';
+      }).join('');
+      return '<details class="module-block" style="margin-bottom:14px">' +
+        '<summary><span class="modtitle">' +
+          '<span class="pill ' + first.a.tt.prog + '">' + pA.short + ' Sem ' + first.a.tt.sem + '</span>&nbsp;&harr;&nbsp;' +
+          '<span class="pill ' + first.b.tt.prog + '">' + pB.short + ' Sem ' + first.b.tt.sem + '</span>&nbsp;' +
+          '<span class="pill alert">' + (first.reason === 'faculty' ? 'Same teacher' : 'Same venue') + ': ' +
+          TT.plain(first.a.venue === first.b.venue ? first.a.venue : (first.a.faculty || '')) + '</span></span>' +
+        '<span class="modtitle-right"><span class="mod-duration">' + list.length + ' overlapping slot' + (list.length === 1 ? '' : 's') +
+          ' &middot; ' + TT.hrs(totalMin) + '/wk</span>' +
+          (certain ? '<span class="pill alert">Terms overlap</span>' : '<span class="pill warn">Dates unconfirmed</span>') +
+          '<span class="chev">&#9660;</span></span></summary>' +
+        '<div style="padding:16px 22px 20px"><table class="data-table" style="margin-bottom:0"><thead><tr><th>Day</th><th>' +
+        pA.short + '</th><th>' + pB.short + '</th></tr></thead><tbody>' + rows + '</tbody></table></div></details>';
+    }).join('');
+    out += '<p class="note warn"><span class="note-lbl">Read with care</span>A venue clash only fires on an exact match of ' +
+      'the printed venue text &mdash; near-matches (a hedged label vs. a plain one) are close enough that the coordinator ' +
+      'should still confirm the two cohorts get different rooms when both are in term.</p>';
+  }
+
+  out += '<h3 style="margin-top:30px">2. Contact hours against the approved scheme</h3>';
+  RSPH.timetables.forEach(function (tt) {
+    var p = RSPH.programmes[tt.prog];
+    var cov = TT.coverage(tt.prog, tt.sem);
+    var contact = TT.weeklyContact(tt);
+    var totalCr = cov.reduce(function (a, c) { return a + c.course.credits; }, 0);
+    out += '<h4 style="font-family:\'Playfair Display\',serif;font-size:15px;color:var(--indigo);margin:20px 0 8px">' +
+      '<span class="pill ' + tt.prog + '">' + p.short + '</span> Semester ' + tt.sem +
+      ' <span style="font-size:12px;font-weight:400;color:var(--ink-soft)">&middot; ' + TT.hrs(contact) +
+      ' of timetabled contact per week &middot; ' + totalCr + ' credits</span></h4>';
+    out += '<table class="data-table"><thead><tr><th>Code</th><th>Course</th><th>Type</th>' +
+      '<th class="num">Credits</th><th class="num">Hours / week</th><th>On the grid</th></tr></thead><tbody>' +
+      cov.map(function (c) {
+        return '<tr><td class="code">' + c.course.code + '</td><td>' + c.course.title + '</td>' +
+          '<td style="font-size:12px;color:var(--ink-soft)">' + c.course.type + '</td>' +
+          '<td class="num">' + c.course.credits + '</td>' +
+          '<td class="num">' + (c.minutes ? TT.hrs(c.minutes) : '&mdash;') + '</td>' +
+          '<td>' + (c.present ? '<span class="pill ok">Scheduled</span>' :
+            (c.course.type === 'experiential' ? '<span class="pill mute">Not timetabled</span>' : '<span class="pill warn">No slot</span>')) +
+          '</td></tr>';
+      }).join('') + '</tbody></table>';
+  });
+
+  out += '<h3 style="margin-top:30px">3. How each week is actually spent</h3>';
+  out += '<table class="data-table"><thead><tr><th>Timetable</th><th>Breakdown of the week</th><th class="num">Total</th></tr></thead><tbody>' +
+    RSPH.timetables.map(function (tt) {
+      var p = RSPH.programmes[tt.prog];
+      var kl = TT.kindLoad(tt);
+      var tot = Object.keys(kl).reduce(function (a, k) { return a + kl[k]; }, 0) || 1;
+      var bar = '<div style="display:flex;height:16px;border-radius:999px;overflow:hidden;border:1px solid var(--border);margin-bottom:8px">' +
+        Object.keys(kl).sort(function (a, b) { return kl[b] - kl[a]; }).map(function (k) {
+          return '<div title="' + RSPH.kinds[k].label + ' — ' + TT.hrs(kl[k]) + '" style="width:' + (kl[k] / tot * 100) + '%;background:' + RSPH.kinds[k].color + '"></div>';
+        }).join('') + '</div>';
+      return '<tr><td style="white-space:nowrap"><span class="pill ' + tt.prog + '">' + p.short + '</span><br/>' +
+        '<strong style="color:var(--indigo)">Semester ' + tt.sem + '</strong></td><td>' + bar + '</td>' +
+        '<td class="num">' + TT.hrs(tot) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+
+  out += '<h3 style="margin-top:30px">4. Notes on the source documents</h3>';
+  var anyFlag = false;
+  RSPH.timetables.forEach(function (tt) {
+    if (!tt.flags || !tt.flags.length) return;
+    anyFlag = true;
+    var p = RSPH.programmes[tt.prog];
+    out += '<p class="note alert"><span class="note-lbl">' + p.short + ' &middot; Semester ' + tt.sem + ' &mdash; ' + tt.source + '</span><ul>' +
+      tt.flags.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ul></p>';
+  });
+  if (!anyFlag) out += '<p class="note ok"><span class="note-lbl">Clean</span>No ambiguities recorded.</p>';
+
+  out += '<h3 style="margin-top:30px">5. Timetables not yet issued</h3>';
+  var pend = RSPH.pending.map(function (x) {
+    var p = RSPH.programmes[x.prog];
+    var cr = RSPH.courses.filter(function (c) { return c.prog === x.prog && c.sem === x.sem; });
+    return '<tr><td><span class="pill ' + x.prog + '">' + p.short + '</span></td>' +
+      '<td><strong style="color:var(--indigo)">Semester ' + x.sem + '</strong></td>' +
+      '<td class="num">' + cr.length + '</td><td class="num">' + cr.reduce(function (a, c) { return a + c.credits; }, 0) + '</td></tr>';
+  }).join('');
+  out += '<table class="data-table"><thead><tr><th>Programme</th><th>Semester</th><th class="num">Courses</th><th class="num">Credits</th></tr></thead><tbody>' +
+    pend + '</tbody></table>' +
+    '<p class="note"><span class="note-lbl">Adding one</span>Use the <strong>Timetables</strong> tab above to add it.</p>';
+
+  document.getElementById('sec-insights').innerHTML = out;
 }
 
 /* ===========================================================================
