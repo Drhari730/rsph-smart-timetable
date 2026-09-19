@@ -52,7 +52,7 @@ function showAdmin(username) {
   document.getElementById('login-panel').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
   document.getElementById('whoami').textContent = 'Signed in as ' + username;
-  switchSection('courses');
+  switchSection('guide');
 }
 
 document.getElementById('login-form').addEventListener('submit', function (e) {
@@ -80,9 +80,10 @@ function switchSection(name) {
   $$('#seg-section button').forEach(function (b) {
     b.setAttribute('aria-pressed', String(b.getAttribute('data-section') === name));
   });
-  ['courses', 'electives', 'timetables', 'faculty', 'insights', 'account'].forEach(function (s) {
+  ['guide', 'courses', 'electives', 'timetables', 'faculty', 'insights', 'account'].forEach(function (s) {
     document.getElementById('sec-' + s).style.display = (s === name) ? 'block' : 'none';
   });
+  if (name === 'guide') renderGuide();
   if (name === 'courses') loadCourses();
   if (name === 'electives') loadElectives();
   if (name === 'timetables') loadTimetables();
@@ -92,6 +93,93 @@ function switchSection(name) {
 }
 
 var TYPE_OPTS = ['core', 'elective', 'ogec', 'experiential'];
+
+/* ===========================================================================
+   GUIDE — plain-language walkthrough of every tab, written for whoever runs
+   this panel day to day rather than for another developer.
+   =========================================================================== */
+function guideStep(icon, label, bodyHTML) {
+  return '<div class="guide-row"><span class="guide-icon">' + icon + '</span>' +
+    '<div class="guide-body"><span class="guide-label">' + label + '</span>' + bodyHTML + '</div></div>';
+}
+
+function renderGuide() {
+  var html =
+    '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0">' +
+    '<span class="eyebrow smallcaps">Start here</span>' +
+    '<h1 style="font-size:22px;margin:6px 0">How this panel works</h1>' +
+    '<p style="font-size:13.5px">One walkthrough per tab. Everything you change here appears on the public ' +
+    'site (Timetables and Courses) immediately &mdash; there is nothing to publish or redeploy.</p></div>';
+
+  html += '<div class="admin-card"><h2>Courses</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#10133;', 'Add a course',
+      '<p>Fill in Programme, Semester, Code (e.g. <code>PHC501A</code>), Type, Credits and Title at the top of the tab, ' +
+      'then click <strong>Add course</strong>. The optional &ldquo;Course-notes link&rdquo; field only matters for MPH courses ' +
+      'that already have a page on the course-notes site (e.g. <code>phc501a.html</code>) &mdash; leave it blank otherwise.</p>') +
+    guideStep('&#9998;', 'Edit a course',
+      '<p>Click <strong>Edit</strong> on its row. The form at the top fills in with that course&rsquo;s details &mdash; change ' +
+      'whatever you need and click <strong>Save changes</strong>, or <strong>Cancel</strong> to leave it as it was.</p>') +
+    guideStep('&#128465;', 'Delete a course',
+      '<p>Click <strong>Delete</strong> on its row and confirm. This only removes it from the catalogue &mdash; if it&rsquo;s ' +
+      'still referenced by a code on a timetable, that session will just show without a credits/notes link.</p>') +
+  '</div></div>';
+
+  html += '<div class="admin-card"><h2>Electives</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#128218;', 'The MDEC / O-GEC pool',
+      '<p>This is the list shown on the public Courses page under &ldquo;Elective pool&rdquo; &mdash; the courses a ' +
+      'programme&rsquo;s MDEC/O-GEC slots can be filled from. Add, edit and delete work exactly like the Courses tab: ' +
+      'Programme, Code, Title, then <strong>Add elective</strong>.</p>') +
+  '</div></div>';
+
+  html += '<div class="admin-card"><h2>Timetables</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#10133;', 'Add a new timetable',
+      '<p>Click <strong>+ New timetable</strong> at the top of the list. Give it a unique <strong>id</strong> ' +
+      '(short and simple, e.g. <code>mph-2</code> or <code>mha-1</code>), pick the Programme and Semester, and fill in ' +
+      'Batch, Academic year, Venue, Faculty/owning department and the start/end dates if they&rsquo;re known. Leave a date ' +
+      'blank rather than guessing &mdash; the public site says &ldquo;not issued&rdquo; instead of showing a wrong one.</p>') +
+    guideStep('&#128337;', 'Time slots = the columns of the grid',
+      '<p>Each row under &ldquo;Time slots&rdquo; is one column of the weekly grid, in order (e.g. 9:00&ndash;10:00, ' +
+      '10:00&ndash;11:00&hellip;). Tick <strong>Lunch?</strong> for the break column so it renders as the shaded &ldquo;Lunch&rdquo; ' +
+      'strip instead of an empty session slot. Use <strong>+ Add time slot</strong> to add a row and the &times; button to remove one ' +
+      '&mdash; the Label box is free text and only affects what visitors read at the top of that column.</p>') +
+    guideStep('&#128197;', 'Weekly blocks = the actual sessions',
+      '<p>Each day (Monday&hellip;Sunday) has its own <strong>+ Add block to &hellip;</strong> button. A block needs: which time slot ' +
+      'it <strong>starts</strong> in, how many slots it <strong>spans</strong> (2 if a session runs across two consecutive columns), ' +
+      'a <strong>Title</strong>, an optional <strong>Code</strong> if it&rsquo;s a course from the catalogue (this is what links the ' +
+      'session to its credits and, for MPH, its course-notes page), a <strong>Kind</strong> (this sets the colour and whether it ' +
+      'counts as teaching time in the load figures), and optionally who is teaching it and where.</p>') +
+    guideStep('&#127979;', '&ldquo;Classrooms&rdquo; &mdash; there isn&rsquo;t a separate list',
+      '<p>Rooms are just typed text, not a picklist. The timetable&rsquo;s own <strong>Venue</strong> field (in the meta fields at ' +
+      'the top) is the default room for every session in it. If one particular session meets somewhere else &mdash; hospital ' +
+      'training in a ward, a session in the library &mdash; leave that block&rsquo;s own <strong>Venue override</strong> field filled in ' +
+      'with that room instead. <strong>Type the room name exactly the same way every time</strong> (e.g. always &ldquo;Classroom 1&rdquo;, ' +
+      'never sometimes &ldquo;Classroom 1&rdquo; and sometimes &ldquo;Class Room-1&rdquo;) &mdash; the clash checker under Insights &amp; Checks ' +
+      'only catches two sessions double-booking a room when the text matches exactly.</p>') +
+    guideStep('&#128064;', 'Check the live preview before saving',
+      '<p>The grid at the bottom of the editor updates as you type. If a session doesn&rsquo;t appear where you expect, the ' +
+      'most common cause is the wrong starting slot or span &mdash; fix it there and the preview updates immediately.</p>') +
+    guideStep('&#128190;', 'Save, or delete the whole timetable',
+      '<p>Click <strong>Create timetable</strong> / <strong>Save changes</strong> when you&rsquo;re done. To remove an entire ' +
+      'timetable, use <strong>Delete</strong> on its row in the list (or the button inside the editor) &mdash; this deletes every ' +
+      'session in it, so there&rsquo;s no undo.</p>') +
+  '</div></div>';
+
+  html += '<div class="admin-card"><h2>Faculty Load &amp; Insights &amp; Checks</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#128202;', 'Nothing to edit here',
+      '<p>Both tabs are read-only and recompute themselves from whatever is in Courses, Electives and Timetables. ' +
+      '<strong>Faculty Load</strong> rolls up who is teaching what and how many hours a week. <strong>Insights &amp; Checks</strong> ' +
+      'flags venue/teacher clashes, compares timetabled hours against each course&rsquo;s approved credits, and lists any semester ' +
+      'in the scheme that still has no timetable. If something looks wrong here, the fix is always back in the Timetables tab.</p>') +
+  '</div></div>';
+
+  html += '<div class="admin-card"><h2>Account</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#128273;', 'Change your password',
+      '<p>Enter your current password and a new one (8 characters minimum) and click <strong>Update password</strong>. ' +
+      'The sign-in email itself is set on the server, not from this panel &mdash; ask whoever manages the deployment to change it.</p>') +
+  '</div></div>';
+
+  document.getElementById('sec-guide').innerHTML = html;
+}
 
 /* ===========================================================================
    COURSES

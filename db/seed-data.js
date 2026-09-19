@@ -275,23 +275,23 @@ const timetables = [
       ],
       Wed: [
         { i:0, n:2, t:'Marketing and Strategic Management in Healthcare', c:'HAC603C', f:'Dr. Mrinalini', k:'lecture' },
-        { i:2, n:2, t:'MDEC-2', c:'HAE6XXA', f:'Faculty of School of Public Health', k:'elective' },
+        { i:2, n:2, t:'MDEC-2', c:'HAE6XXA', f:'RSPH', k:'elective' },
         { i:5, n:3, t:'Hospital Training (RMH&ndash;RMCH)', c:'HAL606C', k:'field', v:'RMH / RMCH' }
       ],
       Thu: [
-        { i:0, n:4, t:'Group Project', c:'HAP605C', f:'Faculty of School of Public Health and Community Medicine', k:'project' },
+        { i:0, n:4, t:'Group Project', c:'HAP605C', f:'RSPH, Dept. of Community Medicine, RMC', k:'project' },
         { i:5, n:3, t:'Hospital Training (RMH&ndash;RMCH)', c:'HAL606C', k:'field', v:'RMH / RMCH' }
       ],
       Fri: [
         { i:0, n:2, t:'Marketing and Strategic Management in Healthcare', c:'HAC603C', f:'Dr. Mrinalini', k:'lecture' },
-        { i:2, n:2, t:'SDL / Journal Club', f:'Faculty of School of Public Health', k:'academic' },
+        { i:2, n:2, t:'SDL / Journal Club', f:'RSPH', k:'academic' },
         { i:5, n:3, t:'Hospital Training (RMH&ndash;RMCH)', c:'HAL606C', k:'field', v:'RMH / RMCH' }
       ],
       Sat: [
-        { i:0, n:2, t:'Group Project', c:'HAP605C', f:'Faculty of School of Public Health and Community Medicine', k:'project' },
+        { i:0, n:2, t:'Group Project', c:'HAP605C', f:'RSPH, Dept. of Community Medicine, RMC', k:'project' },
         { i:2, n:2, t:'Library', k:'selfstudy', v:'Library' },
         { i:5, n:1, t:'Mentor&ndash;Mentee Meeting', k:'mentoring' },
-        { i:6, n:2, t:'SDL / Journal Club', f:'Faculty of School of Public Health', k:'academic' }
+        { i:6, n:2, t:'SDL / Journal Club', f:'RSPH', k:'academic' }
       ]
     }
   }
