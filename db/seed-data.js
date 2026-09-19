@@ -10,7 +10,7 @@ const meta = {
   university: 'M. S. Ramaiah University of Applied Sciences',
   version: '2.0',
   notesSite: 'RSPH MPH Course Notes portal',
-  notesBase: '../RSPH_MPH_Website/courses/'
+  notesBase: 'https://rsph-mph-course-notes.onrender.com/courses/'
 };
 
 const programmes = {
