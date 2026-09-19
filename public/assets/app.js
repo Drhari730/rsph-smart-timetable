@@ -469,22 +469,38 @@ function reveal() {
 function countUp() {
   const els = $$('.stat-num[data-count]');
   if (!els.length) return;
+  const finalText = el => {
+    const target = parseFloat(el.getAttribute('data-count')) || 0;
+    return el.hasAttribute('data-no-format') ? String(target) : Number(target).toLocaleString('en-IN');
+  };
   const run = el => {
+    // requestAnimationFrame is throttled to near-zero on a hidden/backgrounded
+    // tab (a link opened in a background tab, a prerender, etc.) — animating
+    // against it can leave the number visibly stuck at 0 indefinitely. Skip
+    // straight to the final value in that case instead of hoping rAF ticks.
+    if (document.hidden) { el.textContent = finalText(el); return; }
     const target = parseFloat(el.getAttribute('data-count')) || 0;
     const noFmt = el.hasAttribute('data-no-format');
     const t0 = performance.now(), dur = 1000;
     (function tick(now) {
+      if (document.hidden) { el.textContent = finalText(el); return; }
       const p = Math.min(1, (now - t0) / dur), eased = 1 - Math.pow(1 - p, 3);
       const v = target % 1 ? (target * eased).toFixed(1) : Math.round(target * eased);
       el.textContent = noFmt ? String(v) : Number(v).toLocaleString('en-IN');
       if (p < 1) requestAnimationFrame(tick);
-      else el.textContent = noFmt ? String(target) : Number(target).toLocaleString('en-IN');
+      else el.textContent = finalText(el);
     })(performance.now());
   };
   const io = new IntersectionObserver(es => {
     es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } });
   }, { threshold: 0.4 });
   els.forEach(e => io.observe(e));
+
+  // Belt-and-suspenders: if the tab was hidden when everything above ran,
+  // snap every counter to its correct value as soon as it becomes visible.
+  document.addEventListener('visibilitychange', function fix() {
+    if (!document.hidden) { els.forEach(el => { el.textContent = finalText(el); }); document.removeEventListener('visibilitychange', fix); }
+  });
 }
 
 /* ---------- export ------------------------------------------------------- */
