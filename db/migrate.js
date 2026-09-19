@@ -82,11 +82,26 @@ async function syncAdminUser() {
     return;
   }
   const hash = await bcrypt.hash(password, 10);
-  await pool.query(
-    `INSERT INTO admin_users (username, password_hash) VALUES ($1,$2)
-     ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = now()`,
-    [username, hash]
-  );
+  // Exactly one admin account, controlled entirely by ADMIN_USERNAME /
+  // ADMIN_PASSWORD. If the username env var is changed (e.g. switched to an
+  // email address), the old login is removed rather than left active
+  // alongside the new one.
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM admin_users WHERE username <> $1', [username]);
+    await client.query(
+      `INSERT INTO admin_users (username, password_hash) VALUES ($1,$2)
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = now()`,
+      [username, hash]
+    );
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 module.exports = { migrate };
