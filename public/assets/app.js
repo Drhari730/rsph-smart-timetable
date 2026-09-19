@@ -36,10 +36,17 @@ function fmtDate(d) {
 }
 
 /* ---------- indexes ------------------------------------------------------ */
-const courseIndex = {};
-RSPH.courses.forEach(c => { courseIndex[c.prog + ':' + c.code] = c; });
-
-function course(prog, code) { return code ? courseIndex[prog + ':' + code] : null; }
+// Built lazily (not at script-load time): RSPH.courses is only populated once
+// the async /api/bootstrap fetch in data.js resolves, which happens after
+// this file has already run once as a <script> tag.
+function course(prog, code) {
+  if (!code || !RSPH.courses) return null;
+  for (let i = 0; i < RSPH.courses.length; i++) {
+    const c = RSPH.courses[i];
+    if (c.prog === prog && c.code === code) return c;
+  }
+  return null;
+}
 
 /* Expand a timetable into flat session records with real clock times. */
 function sessions(tt) {
