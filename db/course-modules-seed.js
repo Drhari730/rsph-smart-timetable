@@ -1529,24 +1529,141 @@ module.exports = [
     "prog": "mph",
     "code": "PHC601A",
     "seq": 1,
-    "title": "Course Contents",
-    "hours": 15.0,
+    "title": "Definitions, Scope and Determinants of Global Health",
+    "hours": 2,
     "objectives": [
       {
         "text": "Distinguish global health from international and national public health, and outline the diversity of determinants that shape disease burden across countries.",
         "bloom": "Understand",
         "co": "CO-1"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Definitions and scope of global/international health",
+        "priority": "must"
       },
+      {
+        "text": "Vast diversity of determinants of health and disease",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Open with definitions and scope — international vs. global health, using the Brown/Cueto/Fee framing of the shift from nation-state 'international' health to transnational 'global' health — then lay out the diversity of determinants that shape disease burden across countries, grounded in real LMIC examples rather than left theoretical.",
+      "pptOutline": [
+        "Defining Global vs International Health",
+        "Determinants of Health and Disease Worldwide"
+      ],
+      "videoIdea": "A WHO-produced explainer on WHO's history and mandate — look on WHO's official YouTube channel.",
+      "readingIdea": "Brown, Cueto & Fee (2006), 'The WHO and the Transition from International to Global Public Health' (in the Key Readings).",
+      "exercise": ""
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHC601A",
+    "seq": 2,
+    "title": "Emerging Global Health Priorities, Health System Reforms and Global Initiatives",
+    "hours": 4,
+    "objectives": [
       {
         "text": "Explain how health systems reform and major global initiatives respond to emerging priorities such as infectious disease, poverty, conflict and health inequity.",
         "bloom": "Understand",
         "co": "CO-2"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Emerging global health priorities — infectious diseases, poverty, conflicts and emergencies, health inequity",
+        "priority": "must"
       },
+      {
+        "text": "Principles and impact of health systems reforms",
+        "priority": "must"
+      },
+      {
+        "text": "Major global initiatives for disease prevention and health promotion",
+        "priority": "must"
+      },
+      {
+        "text": "Global health challenges of the next few decades, and how science and technology can be harnessed through collective action to address them",
+        "priority": "desirable"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Move from the emerging priorities (infectious disease, poverty, conflict/emergencies, inequity) into how health-system reform and the major global initiatives respond to them, closing on the challenges of the coming decades and the role of science, technology and collective action.",
+      "pptOutline": [
+        "Emerging Global Health Priorities",
+        "Health Systems Reform: Principles and Impact",
+        "Major Global Health Initiatives"
+      ],
+      "videoIdea": "",
+      "readingIdea": "",
+      "exercise": ""
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHC601A",
+    "seq": 3,
+    "title": "From MDGs to SDGs; Foreign Policy and Trade in Global Health",
+    "hours": 3,
+    "objectives": [
       {
         "text": "Critically analyse the evolution from the Millennium Development Goals to the Sustainable Development Goals, and the influence of foreign policy and trade on health and development.",
         "bloom": "Analyse",
         "co": "CO-4"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Sustainable Development Goals vs./and evolution from the Millennium Development Goals",
+        "priority": "must"
       },
+      {
+        "text": "Role of foreign policy and trade in global health",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Trace the MDG-to-SDG evolution and what changed in the framing of health, then the geopolitics of foreign policy and trade as levers on health and development.",
+      "pptOutline": [
+        "From MDGs to SDGs",
+        "Foreign Policy, Trade and Global Health Governance"
+      ],
+      "videoIdea": "A short UN/WHO video tracing the MDG-to-SDG transition — on the UN's or WHO's official YouTube channels.",
+      "readingIdea": "A recent (last 2-3 years) Lancet or BMJ Global Health commentary on SDG progress — PubMed search 'SDG global health progress review'.",
+      "exercise": "Small groups, each assigned one health-related SDG target (e.g. SDG 3.8 on universal health coverage), debate in a short mock UN-panel format whether trade/foreign policy or domestic health-system reform is the bigger lever for reaching it, then report a two-minute position back to the class."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHC601A",
+    "seq": 4,
+    "title": "Health Care Systems in Low- and Middle-Income Countries",
+    "hours": 3,
+    "objectives": [],
+    "topics": [
+      {
+        "text": "Health care systems in low- and middle-income countries",
+        "priority": "desirable"
+      }
+    ],
+    "guide": {
+      "notesFocus": "",
+      "pptOutline": [],
+      "videoIdea": "",
+      "readingIdea": "",
+      "exercise": ""
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHC601A",
+    "seq": 5,
+    "title": "Global Health Issues and Knowledge Translation",
+    "hours": 3,
+    "objectives": [
       {
         "text": "Propose a context-appropriate knowledge translation approach for a named global health issue in a low- or middle-income country health system.",
         "bloom": "Create",
@@ -1555,40 +1672,20 @@ module.exports = [
     ],
     "topics": [
       {
-        "text": "Definitions and scope of global/international health; vast diversity of determinants of health and disease",
-        "priority": "must"
-      },
-      {
-        "text": "Emerging global health priorities — infectious diseases, poverty, conflicts and emergencies, health inequity, principles and impact of health systems reforms, major global initiatives for disease prevention and health promotion; global health challenges of coming decades and how science/technology can be harnessed through collective action",
-        "priority": "must"
-      },
-      {
-        "text": "Sustainable Development Goals vs./and evolution from Millennium Development Goals; role of foreign policy and trade in global health",
-        "priority": "must"
-      },
-      {
-        "text": "Healthcare systems in low- and middle-income countries",
+        "text": "Global health issues",
         "priority": "desirable"
       },
       {
-        "text": "Global health issues and knowledge translation in global health",
+        "text": "Knowledge translation in global health",
         "priority": "desirable"
       }
     ],
     "guide": {
-      "notesFocus": "Sequence the lecture from definitions and scope (international vs. global health, using the Brown/Cueto/Fee framing of the shift from nation-state 'international' health to transnational 'global' health) through determinants and emerging priorities (infectious disease, poverty, conflict/emergencies, inequity), then into health-system reform and major global initiatives, closing with the MDG-to-SDG evolution and the geopolitics of foreign policy and trade. Keep grounding abstract determinants talk in the realities of LMIC health systems rather than leaving it theoretical.",
-      "pptOutline": [
-        "Defining Global vs International Health",
-        "Determinants of Health and Disease Worldwide",
-        "Emerging Global Health Priorities",
-        "Health Systems Reform: Principles and Impact",
-        "Major Global Health Initiatives",
-        "From MDGs to SDGs",
-        "Foreign Policy, Trade and Global Health Governance"
-      ],
-      "videoIdea": "A WHO-produced explainer on WHO's history and mandate, or a short UN/WHO video tracing the MDG-to-SDG transition — look on WHO's and the UN's official YouTube channels.",
-      "readingIdea": "Assign the Brown, Cueto & Fee (2006) article already in the Key Readings ('The WHO and the Transition from International to Global Public Health'), paired with a recent (last 2-3 years) Lancet or BMJ Global Health commentary on SDG progress, found via a PubMed search on 'SDG global health progress review'.",
-      "exercise": "Split the class into small groups, each assigned one health-related SDG target (e.g., SDG 3.8 on universal health coverage), and have them debate in a short mock UN-panel format whether trade/foreign policy or domestic health-system reform is the bigger lever for reaching it, then report a two-minute position back to the class."
+      "notesFocus": "",
+      "pptOutline": [],
+      "videoIdea": "",
+      "readingIdea": "",
+      "exercise": ""
     }
   },
   {
