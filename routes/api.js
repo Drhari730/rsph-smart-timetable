@@ -14,7 +14,7 @@ router.get('/bootstrap', async (req, res) => {
   try {
     const [settings, courses, electivesRows, timetables, moduleRows] = await Promise.all([
       pool.query('SELECT key, value FROM site_settings'),
-      pool.query('SELECT id, prog, sem, code, title, credits, type, notes, faculty FROM courses ORDER BY prog, sem, sort_order, code'),
+      pool.query('SELECT id, prog, sem, code, title, credits, type, notes, faculty, aim, outcomes FROM courses ORDER BY prog, sem, sort_order, code'),
       pool.query('SELECT prog, code, title FROM electives ORDER BY prog, sort_order, code'),
       pool.query(`SELECT id, prog, sem, batch, ay, faculty, venue,
                          to_char(start_date,'YYYY-MM-DD') AS start,

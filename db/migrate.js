@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const pool = require('./pool');
 const seed = require('./seed-data');
 const courseModulesSeed = require('./course-modules-seed');
+const courseInfoSeed = require('./course-info-seed');
 
 /* Runs on every boot. Creates tables if missing (cheap, idempotent), then
    seeds them ONLY if empty — so an admin's edits are never overwritten by a
@@ -20,15 +21,13 @@ async function migrate() {
     await seedAll();
   }
 
-  // Checked independently of the block above: course_modules is a table
-  // added after the first release, so it starts empty even on an
-  // already-seeded database — it needs its own "seed if empty" gate rather
-  // than piggybacking on courseCount, which is already non-zero by then.
-  const { rows: [{ count: moduleCount }] } = await pool.query('SELECT count(*)::int AS count FROM course_modules');
-  if (Number(moduleCount) === 0 && courseModulesSeed.length) {
-    console.log('[migrate] seeding course_modules...');
-    await seedCourseModules();
-  }
+  // Content that arrived after the first release is filled in per item, not
+  // behind a "whole table empty" gate — so an already-seeded live database
+  // still picks up new subjects, without ever overwriting anything an admin
+  // has since edited (a subject that already has modules / outcomes is left
+  // exactly as it is).
+  await seedMissingCourseModules();
+  await backfillCourseInfo();
 
   await syncAdminUser();
   console.log('[migrate] ready.');
@@ -85,11 +84,16 @@ async function seedAll() {
   }
 }
 
-async function seedCourseModules() {
+async function seedMissingCourseModules() {
+  const { rows } = await pool.query('SELECT DISTINCT prog, code FROM course_modules');
+  const have = new Set(rows.map(r => r.prog + ':' + r.code));
+  const todo = courseModulesSeed.filter(m => !have.has(m.prog + ':' + m.code));
+  if (!todo.length) return;
+  console.log('[migrate] seeding course_modules for', [...new Set(todo.map(m => m.code))].join(', '));
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    for (const m of courseModulesSeed) {
+    for (const m of todo) {
       await client.query(
         `INSERT INTO course_modules (prog, code, seq, title, hours, objectives, topics, guide)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
@@ -105,6 +109,23 @@ async function seedCourseModules() {
   } finally {
     client.release();
   }
+}
+
+/* Aim + Course Outcomes, matched to a course either by its course-notes page
+   (so placeholder codes like PHE6XXA pick up their elective's content) or by
+   code. Only fills courses that have no outcomes yet. */
+async function backfillCourseInfo() {
+  let n = 0;
+  for (const c of courseInfoSeed) {
+    const code = c.notes.replace('.html', '').toUpperCase();
+    const r = await pool.query(
+      `UPDATE courses SET aim = $1, outcomes = $2
+       WHERE prog = 'mph' AND (notes = $3 OR upper(code) = $4) AND outcomes IS NULL`,
+      [c.aim || null, JSON.stringify(c.outcomes || []), c.notes, code]
+    );
+    n += r.rowCount;
+  }
+  if (n) console.log('[migrate] backfilled aim/outcomes for', n, 'course(s)');
 }
 
 async function syncAdminUser() {

@@ -37,7 +37,8 @@ const RSPH_READY = fetch('/api/bootstrap', { credentials: 'same-origin' })
     RSPH.courses = (data.courses || []).map(function (c) {
       return { prog: c.prog, sem: c.sem, code: c.code, title: c.title,
                credits: Number(c.credits), type: c.type, notes: c.notes || undefined,
-               faculty: c.faculty || undefined };
+               faculty: c.faculty || undefined,
+               aim: c.aim || undefined, outcomes: c.outcomes || [] };
     });
 
     // timetables: DB rows carry slots/days as JSON already in the shape app.js expects

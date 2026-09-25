@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS courses (
 );
 -- Added after the first release; safe to run again on an already-existing table.
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS faculty TEXT;
+-- Aim and Course Outcomes from the approved Course Specifications (shown when a session is clicked).
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS aim TEXT;
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS outcomes JSONB;
 
 CREATE TABLE IF NOT EXISTS electives (
   id         SERIAL PRIMARY KEY,

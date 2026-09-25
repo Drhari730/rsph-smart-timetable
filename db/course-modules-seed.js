@@ -2400,5 +2400,352 @@ module.exports = [
       "readingIdea": "A recent NFHS-5 fact sheet or report section on fertility and mortality indicators for India, or a PubMed search for a 2022-2025 review on fertility decline in South Asia.",
       "exercise": "Give students age-specific fertility rate data for a hypothetical population and have them calculate the Total Fertility Rate by hand, then discuss how TFR trends need to be interpreted alongside infant mortality data to judge overall population health."
     }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 1,
+    "title": "1. Introduction to Implementation Science (incl. case study)",
+    "hours": 5.0,
+    "objectives": [
+      {
+        "text": "Explain implementation science as a field of practice and research, and describe how process models represent the translation of research into routine practice.",
+        "bloom": "Understand",
+        "co": "CO-1"
+      },
+      {
+        "text": "Differentiate process models, determinant frameworks, classic theories, implementation theories and evaluation frameworks by the question each is built to answer.",
+        "bloom": "Analyse",
+        "co": "CO-4"
+      },
+      {
+        "text": "Apply a determinant framework to the module case study to identify the factors influencing a stated implementation outcome.",
+        "bloom": "Apply",
+        "co": "CO-3"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Process of translating research into practice (process models)",
+        "priority": "must"
+      },
+      {
+        "text": "Factors influencing implementation outcomes (determinant frameworks, classic theories, implementation theories)",
+        "priority": "must"
+      },
+      {
+        "text": "Evaluation of implementation (evaluation frameworks)",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Open with a short case study to make 'implementation science' concrete before naming the three framework families — process models, determinant frameworks, evaluation frameworks — and be explicit that these answer three different questions (how do you implement, what affects implementation, how do you judge implementation) so students don't conflate them.",
+      "pptOutline": [
+        "What Is Implementation Science? A Case Study",
+        "Process Models: Translating Research into Practice",
+        "Determinant Frameworks and Classic Theories",
+        "Implementation Theories",
+        "Evaluation Frameworks for Implementation"
+      ],
+      "videoIdea": "A short explainer on implementation science fundamentals from a source such as the NIH Fogarty International Center's training materials or a Dissemination and Implementation Science webinar series.",
+      "readingIdea": "The 'Practical Implementation Science: Moving Evidence into Action' (2022) textbook already listed as a Key Reading, paired with a PubMed search for an implementation-science case study set in a resource-constrained health system.",
+      "exercise": "Present a short realistic case (e.g., low uptake of a clinical guideline in a district hospital) and have groups apply one named determinant framework (e.g., CFIR) to identify three plausible barriers, then decide which process-model stage the intervention is currently stuck at."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 2,
+    "title": "2. Study Designs to Assess Impact and Measure Effectiveness",
+    "hours": 5.0,
+    "objectives": [
+      {
+        "text": "Describe simple pre-post, interrupted time series and difference-in-differences designs and the threats to validity each is intended to address.",
+        "bloom": "Understand",
+        "co": "CO-2"
+      },
+      {
+        "text": "Appraise the strengths and limitations of experimental and quasi-experimental designs for evaluating implementation strategies in real-world service settings.",
+        "bloom": "Evaluate",
+        "co": "CO-2"
+      },
+      {
+        "text": "Select an appropriate design for a stated implementation question and specify the sample size and analysis considerations it entails.",
+        "bloom": "Apply",
+        "co": "CO-4"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Simple pre-post designs, interrupted time series, difference-in-differences",
+        "priority": "must"
+      },
+      {
+        "text": "Experimental designs in implementation science",
+        "priority": "must"
+      },
+      {
+        "text": "Design, sample size and analysis considerations",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Teach the quasi-experimental designs — simple pre-post, interrupted time series, difference-in-differences — as a ladder of increasing rigor against confounding before contrasting them with true experimental designs, then close on the practical sample-size and analysis constraints that make full RCTs rare in implementation science.",
+      "pptOutline": [
+        "Why Standard RCTs Often Don't Fit Here",
+        "Simple Pre-Post Designs",
+        "Interrupted Time Series Designs",
+        "Difference-in-Differences Designs",
+        "Experimental Designs in Implementation Science",
+        "Sample Size and Analysis Considerations"
+      ],
+      "videoIdea": "A short explainer on quasi-experimental study designs (interrupted time series or difference-in-differences), of the kind found on a biostatistics/epidemiology teaching channel or a public-health methods MOOC preview.",
+      "readingIdea": "A recent (last 3 years) Implementation Science journal or BMJ methods paper on quasi-experimental designs for evaluating health-system interventions, found via a PubMed search.",
+      "exercise": "Give students a worked mini-dataset showing an outcome measured before and after an intervention in a treatment and a comparison site, and have them sketch what a difference-in-differences estimate would look like and name the assumption it depends on."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 3,
+    "title": "3. Qualitative Methods",
+    "hours": 11.5,
+    "objectives": [
+      {
+        "text": "Explain the contribution qualitative methods make to implementation research, from eliciting stakeholder-centred perspectives to informing intervention design and implementation.",
+        "bloom": "Understand",
+        "co": "CO-3"
+      },
+      {
+        "text": "Apply a qualitative method to characterise the implementation context of a specified setting.",
+        "bloom": "Apply",
+        "co": "CO-3"
+      },
+      {
+        "text": "Analyse qualitative data to infer the mechanisms of change underlying an implementation outcome.",
+        "bloom": "Analyse",
+        "co": "CO-3"
+      },
+      {
+        "text": "Evaluate the role of qualitative enquiry in documenting the implementation process, gauging implementation effectiveness and contributing to theoretical development.",
+        "bloom": "Evaluate",
+        "co": "CO-4"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Elicit stakeholder-centred perspectives",
+        "priority": "must"
+      },
+      {
+        "text": "Inform design and implementation",
+        "priority": "desirable"
+      },
+      {
+        "text": "Understand contexts across diverse settings",
+        "priority": "must"
+      },
+      {
+        "text": "Provide documentation and encourage reflection on the implementation process",
+        "priority": "nice"
+      },
+      {
+        "text": "Gain insight into implementation effectiveness",
+        "priority": "desirable"
+      },
+      {
+        "text": "Understand mechanisms of change",
+        "priority": "must"
+      },
+      {
+        "text": "Contribute to theoretical development",
+        "priority": "nice"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Organize around the distinct purposes qualitative methods serve in implementation science — eliciting stakeholder views, informing design, understanding context, documenting/reflecting, understanding mechanisms, contributing to theory — rather than around specific methods, since the topic list itself is purpose-driven.",
+      "pptOutline": [
+        "Why Qualitative Methods Matter Here",
+        "Eliciting Stakeholder Perspectives",
+        "Understanding Context Across Settings",
+        "Documentation and Reflection During Implementation",
+        "Understanding Mechanisms of Change",
+        "Contributing to Theoretical Development"
+      ],
+      "videoIdea": "A short explainer on qualitative methods in health services research (interviews vs. focus groups vs. ethnographic observation), from a university qualitative-research-methods teaching channel.",
+      "readingIdea": "A recent Implementation Science or BMJ Open article using qualitative methods to understand implementation barriers in an LMIC health programme, found via a PubMed search.",
+      "exercise": "Have students role-play a short semi-structured stakeholder interview in pairs (one as a frontline health worker, one as the researcher) about barriers to implementing a new protocol, then debrief as a class on what the interview revealed that a survey would have missed."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 4,
+    "title": "4. Operations Research as a Contributing Discipline",
+    "hours": 5.0,
+    "objectives": [
+      {
+        "text": "Describe the contribution of operations research to implementation science in health services.",
+        "bloom": "Understand",
+        "co": "CO-1"
+      },
+      {
+        "text": "Structure a stated implementation problem into a form amenable to operations research analysis.",
+        "bloom": "Apply",
+        "co": "CO-4"
+      },
+      {
+        "text": "Design a prospective evaluation of a service improvement intervention.",
+        "bloom": "Create",
+        "co": "CO-3"
+      },
+      {
+        "text": "Analyse a proposal for strategic reconfiguration of health services for its feasibility and expected implementation outcomes.",
+        "bloom": "Analyse",
+        "co": "CO-2"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Structuring implementation problems",
+        "priority": "must"
+      },
+      {
+        "text": "Prospective evaluation of improvement interventions",
+        "priority": "desirable"
+      },
+      {
+        "text": "Strategic reconfiguration of health services",
+        "priority": "desirable"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Frame operations research as the discipline that turns an implementation problem into a structured, analyzable one; move from problem structuring to prospective evaluation of improvement interventions to strategic reconfiguration of services, using one health-service example to connect all three.",
+      "pptOutline": [
+        "Operations Research as a Discipline for Implementation",
+        "Structuring Implementation Problems",
+        "Prospective Evaluation of Improvement Interventions",
+        "Strategic Reconfiguration of Health Services"
+      ],
+      "videoIdea": "A short explainer on operations-research applications in healthcare (e.g., queueing or patient-flow analysis), from a health-systems or industrial-engineering teaching channel.",
+      "readingIdea": "A PubMed search for a recent operations-research case study on health-service reconfiguration or patient-flow improvement in a public hospital setting.",
+      "exercise": "Give students a simple patient-flow bottleneck scenario (e.g., long OPD waiting times) and have small groups structure it as an operations-research problem — inputs, process steps, bottleneck point, one proposed reconfiguration."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 5,
+    "title": "5. Gap Analysis",
+    "hours": 1.5,
+    "objectives": [
+      {
+        "text": "Define an implementation gap and distinguish it from a gap in evidence or in service coverage.",
+        "bloom": "Understand",
+        "co": "CO-1"
+      },
+      {
+        "text": "Conduct a gap analysis for a health programme, identifying where current practice departs from the evidence-based standard.",
+        "bloom": "Apply",
+        "co": "CO-5"
+      },
+      {
+        "text": "Analyse the gaps identified to determine which are amenable to an implementation strategy.",
+        "bloom": "Analyse",
+        "co": "CO-3"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Identifying and analyzing implementation gaps",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Keep this module tight and practical since its topic list is narrow: teach a simple gap-analysis framework — current state vs. desired state vs. the gap and its causes — and connect it explicitly back to the determinant frameworks from Module 1 so gap analysis reads as an applied use of those frameworks.",
+      "pptOutline": [
+        "What Is a Gap Analysis?",
+        "Current State vs Desired State",
+        "Identifying Root Causes of Implementation Gaps",
+        "Linking Gap Analysis to Determinant Frameworks"
+      ],
+      "videoIdea": "A short explainer on gap analysis as a quality-improvement or implementation tool, from a health-quality-improvement source such as the Institute for Healthcare Improvement's (IHI) teaching material.",
+      "readingIdea": "A recent Implementation Science or BMJ Quality & Safety article using gap analysis to identify barriers in a clinical or public-health programme, found via a PubMed search.",
+      "exercise": "Give students actual coverage data for two comparable districts on one indicator (e.g., full immunization coverage) and have them identify the 'gap', then brainstorm in small groups three plausible contributing causes to investigate further."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHE6XXA",
+    "seq": 6,
+    "title": "6. Developing Implementation Strategies",
+    "hours": 1.5,
+    "objectives": [
+      {
+        "text": "Describe the main categories of implementation strategy and the implementation outcomes each is intended to change.",
+        "bloom": "Understand",
+        "co": "CO-4"
+      },
+      {
+        "text": "Develop an implementation strategy matched to the gaps identified in a National Health Programme.",
+        "bloom": "Create",
+        "co": "CO-5"
+      },
+      {
+        "text": "Evaluate a selected implementation strategy against defined implementation outcomes.",
+        "bloom": "Evaluate",
+        "co": "CO-3"
+      }
+    ],
+    "topics": [
+      {
+        "text": "Evaluating implementation strategies",
+        "priority": "must"
+      }
+    ],
+    "guide": {
+      "notesFocus": "Close the course by teaching implementation strategies as targeted responses to the specific gaps and determinants identified in Modules 4-5, and spend most of the time on how to evaluate whether a chosen strategy actually worked, since that is the explicit topic listed.",
+      "pptOutline": [
+        "From Gaps to Strategies: Matching Solutions to Barriers",
+        "Types of Implementation Strategies",
+        "Evaluating Implementation Strategies",
+        "Common Pitfalls in Strategy Selection"
+      ],
+      "videoIdea": "A short explainer on implementation-strategy selection and evaluation, from a source such as the NIH-funded Implementation Science webinar series or a Dissemination and Implementation Science training channel.",
+      "readingIdea": "A recent Implementation Science journal article evaluating a specific implementation strategy (e.g., audit-and-feedback or educational outreach) in a health setting, found via a PubMed search.",
+      "exercise": "Return to the case/gap identified in the Module 5 activity and have groups propose one concrete implementation strategy to close it, then design on paper one simple indicator they would track to know if the strategy worked."
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHP605A",
+    "seq": 1,
+    "title": "Field Project Sequence",
+    "hours": 150.0,
+    "objectives": [],
+    "topics": [],
+    "guide": {
+      "notesFocus": "",
+      "pptOutline": [],
+      "videoIdea": "",
+      "readingIdea": "",
+      "exercise": ""
+    }
+  },
+  {
+    "prog": "mph",
+    "code": "PHP606A",
+    "seq": 1,
+    "title": "Dissertation Proposal Sequence",
+    "hours": 90.0,
+    "objectives": [],
+    "topics": [],
+    "guide": {
+      "notesFocus": "",
+      "pptOutline": [],
+      "videoIdea": "",
+      "readingIdea": "",
+      "exercise": ""
+    }
   }
 ];

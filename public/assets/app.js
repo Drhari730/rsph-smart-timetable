@@ -305,18 +305,41 @@ function downloadICS(tt) {
 /* ===========================================================================
    Rendering
    =========================================================================== */
-function cellHTML(tt, b, opts) {
+/* ---------- date helpers used by the week-aware views -------------------- */
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function dateInWeek(weekStart, dayKey) {
+  return new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + RSPH.DAYS.indexOf(dayKey));
+}
+/* true / false against the timetable's own dates; true when no dates exist */
+function dateInTerm(tt, d) {
+  const s = tt.start ? parseDate(tt.start) : null, e = tt.end ? parseDate(tt.end) : null;
+  return (!s || d >= s) && (!e || d <= e);
+}
+/* the module a given block covers on a given date, or null. Field postings
+   carry a course code but aren't classroom teaching, so they don't consume
+   (or show) a module. */
+function moduleOnDate(tt, b, date) {
+  if (!date || !b.c || b.k === 'field' || !dateInTerm(tt, date)) return null;
+  return moduleForDate(tt, b.c, date);
+}
+
+/* ctx = { day, bi, date } — bi is the block's index in tt.days[day], which is
+   how a click finds its way back to the exact session */
+function cellHTML(tt, b, opts, ctx) {
+  ctx = ctx || {};
   const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
-  const c = course(tt.prog, b.c);
-  const notesHref = (c && c.notes && tt.prog === 'mph')
-    ? RSPH.meta.notesBase + c.notes : null;
   const dim = opts && opts.filter && !matches(b, opts.filter) ? ' is-dim' : '';
-  return '<div class="tt-cell k-' + b.k + dim + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
-    (b.c ? ' data-code="' + b.c + '"' : '') + ' data-kind="' + b.k + '">' +
+  const mod = moduleOnDate(tt, b, ctx.date);
+  return '<div class="tt-cell tt-click k-' + b.k + dim + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
+    (b.c ? ' data-code="' + b.c + '"' : '') + ' data-kind="' + b.k + '"' +
+    (ctx.day ? ' data-day="' + ctx.day + '" data-bi="' + ctx.bi + '"' : '') +
+    (ctx.date ? ' data-date="' + ymd(ctx.date) + '"' : '') + ' tabindex="0" role="button">' +
       (b.c ? '<span class="tt-code">' + b.c + '</span>' : '') +
       '<span class="tt-title">' + b.t + '</span>' +
+      (mod ? '<span class="tt-module">&#128214; ' + mod.module.title + '</span>' : '') +
       (b.f ? '<span class="tt-fac">' + b.f + '</span>' : '') +
-      (notesHref ? '<a class="tt-notes" href="' + notesHref + '">Course notes &rarr;</a>' : '') +
     '</div>';
 }
 
@@ -331,7 +354,10 @@ function matches(b, f) {
   return true;
 }
 
-/* The weekly grid. Days are rows, slots are columns. */
+/* The weekly grid. Days are rows, slots are columns. With opts.weekStart
+   (a Monday) it becomes a specific week: real dates on each row and, for
+   subjects with a module plan, the module that falls on that date. Without
+   it (e.g. the admin preview) it stays the plain recurring template. */
 function renderGrid(tt, opts) {
   opts = opts || {};
   const days = RSPH.DAYS.filter(d => tt.days[d] && tt.days[d].length);
@@ -339,6 +365,7 @@ function renderGrid(tt, opts) {
   const todayKey = RSPH.DAYS[(nowD.getDay() + 6) % 7];
   const liveOK = inTerm(tt, nowD) === true;
   const nowMin = nowD.getHours() * 60 + nowD.getMinutes();
+  const ws = opts.weekStart || null;
 
   let h = '<div class="tt-scroll"><table class="tt-grid"><thead><tr><th class="tt-daycol">Day</th>';
   tt.slots.forEach(s => {
@@ -347,24 +374,29 @@ function renderGrid(tt, opts) {
   h += '</tr></thead><tbody>';
 
   days.forEach(day => {
-    const isToday = liveOK && day === todayKey;
-    h += '<tr' + (isToday ? ' class="is-today"' : '') + '><th class="tt-daycol">' +
+    const date = ws ? dateInWeek(ws, day) : null;
+    const isToday = date ? sameYMD(date, nowD) : (liveOK && day === todayKey);
+    const outTerm = date && !dateInTerm(tt, date);
+    h += '<tr class="' + (isToday ? 'is-today' : '') + (outTerm ? ' is-out' : '') + '"><th class="tt-daycol">' +
          '<span class="tt-day">' + RSPH.DAY_FULL[day] + '</span>' +
-         (isToday ? '<span class="tt-today-tag">Today</span>' : '') + '</th>';
+         (date ? '<span class="tt-date">' + date.getDate() + ' ' + MONTH_NAMES[date.getMonth()].slice(0, 3) + '</span>' : '') +
+         (isToday ? '<span class="tt-today-tag">Today</span>' : '') +
+         (outTerm ? '<span class="tt-out-tag">Not in term</span>' : '') + '</th>';
 
-    const blocks = (tt.days[day] || []).slice().sort((a, b) => a.i - b.i);
+    const blocks = (tt.days[day] || []).map((b, bi) => ({ b, bi })).sort((x, y) => x.b.i - y.b.i);
     let col = 0;
-    blocks.forEach(b => {
+    blocks.forEach(item => {
+      const b = item.b, bi = item.bi;
       while (col < b.i) {
         const sl = tt.slots[col];
         h += sl.lunch ? lunchCell(1) : '<td class="tt-empty"></td>';
         col++;
       }
       const spansLunch = tt.slots.slice(b.i, b.i + b.n).some(s => s.lunch);
-      const live = isToday && nowMin >= toMin(tt.slots[b.i].s) &&
+      const live = isToday && liveOK && nowMin >= toMin(tt.slots[b.i].s) &&
                    nowMin < toMin(tt.slots[Math.min(b.i + b.n - 1, tt.slots.length - 1)].e);
       h += '<td colspan="' + b.n + '" class="tt-td' + (live ? ' is-live' : '') +
-           (spansLunch ? ' spans-lunch' : '') + '">' + cellHTML(tt, b, opts) + '</td>';
+           (spansLunch ? ' spans-lunch' : '') + '">' + cellHTML(tt, b, opts, { day: day, bi: bi, date: date }) + '</td>';
       col = b.i + b.n;
     });
     while (col < tt.slots.length) {
@@ -383,32 +415,42 @@ function renderGrid(tt, opts) {
   }
 }
 
-/* Day-by-day list — the mobile/agenda reading of the same data. */
+/* Day-by-day list — the mobile/agenda reading of the same data, week-aware
+   in the same way as the grid when opts.weekStart is given. */
 function renderAgenda(tt, opts) {
   opts = opts || {};
   const days = RSPH.DAYS.filter(d => tt.days[d] && tt.days[d].length);
   const nowD = new Date();
   const todayKey = RSPH.DAYS[(nowD.getDay() + 6) % 7];
   const liveOK = inTerm(tt, nowD) === true;
+  const ws = opts.weekStart || null;
 
   return '<div class="agenda">' + days.map(day => {
+    const date = ws ? dateInWeek(ws, day) : null;
+    const isToday = date ? sameYMD(date, nowD) : (liveOK && day === todayKey);
+    const outTerm = date && !dateInTerm(tt, date);
     const rows = sessions(tt).filter(s => s.day === day)
       .sort((a, b) => a.start - b.start)
       .filter(s => matches(s.block, opts.filter));
     if (!rows.length) return '';
-    return '<section class="agenda-day' + (liveOK && day === todayKey ? ' is-today' : '') + '">' +
-      '<h3>' + RSPH.DAY_FULL[day] +
-      (liveOK && day === todayKey ? ' <span class="tt-today-tag">Today</span>' : '') + '</h3>' +
+    return '<section class="agenda-day' + (isToday ? ' is-today' : '') + (outTerm ? ' is-out' : '') + '">' +
+      '<h3>' + RSPH.DAY_FULL[day] + (date ? ' <span class="agenda-date">' + fmtDate(date) + '</span>' : '') +
+      (isToday ? ' <span class="tt-today-tag">Today</span>' : '') +
+      (outTerm ? ' <span class="tt-out-tag">Not in term</span>' : '') + '</h3>' +
       rows.map(s => {
         const k = RSPH.kinds[s.kind];
-        return '<div class="agenda-row" style="--k:' + k.color + ';--kbg:' + k.bg + '">' +
+        const bi = tt.days[day].indexOf(s.block);
+        const mod = moduleOnDate(tt, s.block, date);
+        return '<div class="agenda-row tt-click" style="--k:' + k.color + ';--kbg:' + k.bg + '" data-day="' + day +
+          '" data-bi="' + bi + '"' + (date ? ' data-date="' + ymd(date) + '"' : '') + ' tabindex="0" role="button">' +
           '<span class="agenda-time">' + s.startLabel + '<em>' + s.endLabel + '</em></span>' +
           '<span class="agenda-body">' +
             (s.code ? '<span class="tt-code">' + s.code + '</span>' : '') +
             '<strong>' + s.title + '</strong>' +
+            (mod ? '<span class="tt-module">&#128214; Module ' + (mod.moduleIndex + 1) + ': ' + mod.module.title + '</span>' : '') +
             (s.faculty ? '<span class="tt-fac">' + s.faculty + '</span>' : '') +
             '<span class="agenda-meta">' + k.label + ' &middot; ' + s.venue + '</span>' +
-          '</span></div>';
+          '</span><span class="agenda-open">Details &rsaquo;</span></div>';
       }).join('') + '</section>';
   }).join('') + '</div>';
 }
@@ -483,7 +525,7 @@ function moduleSchedule(tt, code, maxWeeks) {
   const mods = courseModules(tt.prog, code);
   const occurrences = [];
   RSPH.DAYS.forEach(day => {
-    (tt.days[day] || []).forEach(b => { if (b.c === code) occurrences.push({ day, block: b }); });
+    (tt.days[day] || []).forEach(b => { if (b.c === code && b.k !== 'field') occurrences.push({ day, block: b }); });
   });
   let out = [];
   if (mods.length && occurrences.length) {
@@ -545,16 +587,18 @@ function renderMonthCalendar(tt, year, month) {
     if (c.other || !c.date) { h += '<div class="cal-cell other-month"><span class="cal-daynum">' + c.day + '</span></div>'; return; }
     const dayKey = RSPH.DAYS[(c.date.getDay() + 6) % 7];
     const inTerm = (!termStart || c.date >= termStart) && (!termEnd || c.date <= termEnd);
-    const blocks = (tt.days[dayKey] || []).filter(b => b.k !== 'lunch').slice().sort((a, b) => a.i - b.i);
     const isToday = sameYMD(c.date, today);
+    // Outside the timetable's own term dates nothing is actually running, so
+    // the day is shown empty rather than listing a timetable that isn't in force.
+    const blocks = inTerm ? (tt.days[dayKey] || []).map((b, bi) => ({ b, bi }))
+      .filter(x => x.b.k !== 'lunch').sort((x, y) => x.b.i - y.b.i) : [];
     h += '<div class="cal-cell' + (inTerm ? '' : ' out-term') + (isToday ? ' is-today' : '') + '">' +
       '<span class="cal-daynum">' + c.day + (isToday ? '<span class="cal-today-dot"></span>' : '') + '</span>' +
-      '<div class="cal-sessions">' + blocks.map(b => {
-        const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
-        const slot = tt.slots[b.i];
-        const mod = b.c ? moduleForDate(tt, b.c, c.date) : null;
-        return '<div class="cal-chip' + (mod ? ' has-module' : '') + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
-          (mod ? ' data-plan-date="' + c.date.getFullYear() + '-' + String(c.date.getMonth() + 1).padStart(2, '0') + '-' + String(c.date.getDate()).padStart(2, '0') + '" data-plan-code="' + b.c + '" data-plan-tt="' + tt.id + '"' : '') + '>' +
+      '<div class="cal-sessions">' + blocks.map(x => {
+        const b = x.b, k = RSPH.kinds[b.k] || RSPH.kinds.lecture, slot = tt.slots[b.i];
+        const mod = moduleOnDate(tt, b, c.date);
+        return '<div class="cal-chip tt-click' + (mod ? ' has-module' : '') + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
+          ' data-day="' + dayKey + '" data-bi="' + x.bi + '" data-date="' + ymd(c.date) + '" tabindex="0" role="button">' +
           (slot ? '<span class="cal-chip-time">' + fmtHM(toMin(slot.s)) + '</span> ' : '') + b.t +
           (mod ? '<span class="cal-chip-module">&#128214; ' + mod.module.title + '</span>' : '') +
         '</div>';
@@ -618,6 +662,152 @@ function renderModuleDetail(tt, code, dateStr) {
   }
   h += '</div>';
   return h;
+}
+
+/* ===========================================================================
+   Session detail — what opens when any session is clicked, in any view.
+   One card answers: what is this, what is the course for (aim + outcomes),
+   what is being taught in this particular session (the module that falls on
+   this date, with its objectives, topics and teaching guide), and where this
+   session sits in the whole course's teaching plan.
+   =========================================================================== */
+function fmtShort(d) {
+  return d.getDate() + ' ' + MONTH_NAMES[d.getMonth()].slice(0, 3);
+}
+
+/* Module-by-module plan for one course on one timetable: the dates each module
+   runs across, derived from the same schedule the views use. */
+function teachingPlanTable(tt, code, currentIdx) {
+  const mods = courseModules(tt.prog, code);
+  if (!mods.length) return '';
+  const sched = moduleSchedule(tt, code);
+  const undated = !tt.start;
+  const rows = mods.map((m, i) => {
+    const sess = sched.filter(x => x.moduleIndex === i);
+    const when = sess.length
+      ? fmtShort(sess[0].date) + (sess.length > 1 ? ' &ndash; ' + fmtShort(sess[sess.length - 1].date) : '')
+      : '<span style="color:var(--ink-soft)">after the dated term</span>';
+    return '<tr' + (i === currentIdx ? ' class="plan-current"' : '') + '>' +
+      '<td class="num">' + (i + 1) + '</td><td>' + m.title + (i === currentIdx ? ' <span class="pill warn">this session</span>' : '') + '</td>' +
+      '<td class="num">' + m.hours + ' h</td><td class="num">' + sess.length + '</td><td>' + when + '</td></tr>';
+  }).join('');
+  return '<h3 class="sd-h">Teaching plan for the course</h3>' +
+    '<p class="sd-sub">Modules in the order of the approved Course Specification, each given its approved classroom hours ' +
+    'and laid over this subject&rsquo;s real weekly slots' + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
+    'no start date is on record for this timetable' : '') + '.</p>' +
+    '<table class="data-table"><thead><tr><th class="num">#</th><th>Module</th><th class="num">Hours</th>' +
+    '<th class="num">Sessions</th><th>Dates</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function sessionDetail(tt, day, bi, dateStr) {
+  const b = (tt.days[day] || [])[bi];
+  if (!b) return '<p>Session not found.</p>';
+  const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
+  const c = course(tt.prog, b.c);
+  const p = RSPH.programmes[tt.prog];
+  const date = dateStr ? parseDate(dateStr) : null;
+  const first = tt.slots[b.i], last = tt.slots[Math.min(b.i + b.n - 1, tt.slots.length - 1)];
+  const when = (date ? RSPH.DAY_FULL[day] + ' ' + fmtDate(date) : 'Every ' + RSPH.DAY_FULL[day]) +
+    ' &middot; ' + fmtHM(toMin(first.s)) + ' &ndash; ' + fmtHM(toMin(last.e));
+  const venue = b.v || tt.venue;
+
+  let h = '<div class="sd-head" style="--k:' + k.color + ';--kbg:' + k.bg + '">' +
+    '<span class="sd-kind">' + k.label + '</span>' +
+    (b.c ? ' <span class="sd-code">' + b.c + '</span>' : '') +
+    '<h2>' + (c ? c.title : b.t) + '</h2>' +
+    (c && plain(c.title) !== plain(b.t) ? '<div class="sd-as">On the timetable as: ' + b.t + '</div>' : '') +
+    '<div class="sd-when">' + when + ' &middot; ' + venue + '</div>' +
+    '<div class="sd-pills">' +
+      '<span class="pill ' + tt.prog + '">' + p.short + ' &middot; Semester ' + tt.sem + '</span>' +
+      (c ? '<span class="pill mute">' + c.credits + ' credits &middot; ' + c.type + '</span>' : '') +
+      (b.f ? '<span class="pill mute">Taking this session: ' + b.f + '</span>' : '') +
+      (c && c.faculty ? '<span class="pill mute">In charge of subject: ' + c.faculty + '</span>' : '') +
+    '</div></div>';
+
+  if (!c) {
+    h += '<p class="sd-sub" style="margin-top:14px">A ' + k.label.toLowerCase() + ' slot on the ' + p.short + ' Semester ' + tt.sem +
+      ' timetable rather than a taught course, so it has no course outcomes or module plan of its own.</p>';
+    return h;
+  }
+
+  if (c.aim) h += '<h3 class="sd-h">What this course is for</h3><p class="sd-aim">' + c.aim + '</p>';
+  if (c.outcomes && c.outcomes.length) {
+    h += '<h3 class="sd-h">Course outcomes</h3><ol class="sd-outcomes">' +
+      c.outcomes.map((o, i) => '<li><span class="co-chip">CO-' + (i + 1) + '</span> ' + o + '</li>').join('') + '</ol>';
+  }
+
+  const mod = moduleOnDate(tt, b, date);
+  let currentIdx = -1;
+  if (mod) {
+    currentIdx = mod.moduleIndex;
+    const sched = moduleSchedule(tt, b.c);
+    const same = sched.filter(x => x.moduleIndex === mod.moduleIndex);
+    const pos = same.findIndex(x => sameYMD(x.date, date)) + 1;
+    const total = courseModules(tt.prog, b.c).length;
+    h += '<h3 class="sd-h">In this session</h3>' +
+      '<p class="sd-sub">Module ' + (mod.moduleIndex + 1) + ' of ' + total + ' &middot; session ' + pos + ' of ' + same.length +
+      ' for this module' + (pos === 1 ? ' &mdash; <strong>module starts today</strong>' : '') +
+      (pos === same.length ? ' &mdash; <strong>module finishes today</strong>' : '') + '</p>' +
+      renderModuleDetail(tt, b.c, dateStr);
+  } else if (b.k === 'field') {
+    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Field posting</span>Practical time attached to this ' +
+      'course; it doesn&rsquo;t use up the classroom hours of its modules.</p>';
+  } else if (date && !dateInTerm(tt, date)) {
+    h += '<p class="note warn" style="margin-top:14px"><span class="note-lbl">Not in term</span>This date falls outside the ' +
+      'timetable&rsquo;s own term dates.</p>';
+  } else if (!courseModules(tt.prog, b.c).length) {
+    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">No module plan yet</span>This subject has no ' +
+      'day-wise module plan on record, so the session can&rsquo;t be tied to a module. It can be added under Admin &rarr; Module Plans.</p>';
+  } else if (date) {
+    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Syllabus already covered</span>Every module&rsquo;s ' +
+      'approved hours have been used by this date &mdash; this session is free for revision, assessment or catch-up.</p>';
+  }
+
+  h += teachingPlanTable(tt, b.c, currentIdx);
+  if (c.notes && tt.prog === 'mph') {
+    h += '<p style="margin-top:14px"><a class="btn" href="' + RSPH.meta.notesBase + c.notes + '" target="_blank" rel="noopener">' +
+      'Open the full course notes &rarr;</a></p>';
+  }
+  return h;
+}
+
+/* A single reusable modal. */
+function openModal(innerHTML) {
+  closeModal();
+  const wrap = document.createElement('div');
+  wrap.className = 'tt-modal-backdrop';
+  wrap.innerHTML = '<div class="tt-modal" role="dialog" aria-modal="true">' +
+    '<button class="tt-modal-close" type="button" aria-label="Close">&times;</button>' + innerHTML + '</div>';
+  document.body.appendChild(wrap);
+  document.body.classList.add('modal-open');
+  wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('.tt-modal-close')) closeModal(); });
+  wrap.querySelector('.tt-modal-close').focus();
+}
+function closeModal() {
+  const m = document.querySelector('.tt-modal-backdrop');
+  if (m) m.remove();
+  document.body.classList.remove('modal-open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* Delegated click (and Enter key) handling for every session in a container
+   rendered by renderGrid / renderAgenda / renderMonthCalendar. */
+function wireSessionClicks(root, tt) {
+  if (!root) return;
+  root.__tt = tt; // always the timetable currently on screen, even after switching
+  if (root.__ttWired) return;
+  root.__ttWired = true;
+  const open = el => openModal(sessionDetail(root.__tt, el.getAttribute('data-day'), +el.getAttribute('data-bi'), el.getAttribute('data-date')));
+  root.addEventListener('click', e => {
+    if (e.target.closest('a')) return;
+    const el = e.target.closest('.tt-click[data-bi]');
+    if (el && root.contains(el)) open(el);
+  });
+  root.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const el = e.target.closest('.tt-click[data-bi]');
+    if (el) { e.preventDefault(); open(el); }
+  });
 }
 
 /* ---------- shared chrome ------------------------------------------------ */
@@ -714,6 +904,7 @@ global.TT = {
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
   courseModules, moduleSchedule, moduleForDate, renderModuleDetail,
+  sessionDetail, openModal, closeModal, wireSessionClicks, mondayOfWeek, ymd, dateInTerm,
   mountChrome, reveal, countUp
 };
 
