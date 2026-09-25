@@ -725,7 +725,7 @@ function sessionDetail(tt, day, bi, dateStr) {
     '</div></div>';
 
   if (!c) {
-    h += '<p class="sd-sub" style="margin-top:14px">A ' + k.label.toLowerCase() + ' slot on the ' + p.short + ' Semester ' + tt.sem +
+    h += '<p class="sd-sub" style="margin-top:14px">' + (/^[aeiou]/i.test(k.label) ? 'An ' : 'A ') + k.label.toLowerCase() + ' slot on the ' + p.short + ' Semester ' + tt.sem +
       ' timetable rather than a taught course, so it has no course outcomes or module plan of its own.</p>';
     return h;
   }

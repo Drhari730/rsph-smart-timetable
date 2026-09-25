@@ -262,7 +262,9 @@ RSPH_READY.then(function(){
       main = TT.renderMonthCalendar(tt, state.month.y, state.month.m);
     } else {
       var wEnd = addDays(state.week, 6);
-      var wk = tt.start ? TT.weekOfTerm(tt, state.week < TT.parseDate(tt.start) ? TT.parseDate(tt.start) : state.week) : null;
+      // counted in calendar weeks (Mon-Sun), so a term that starts mid-week
+      // has that part-week as Week 1 and the following Monday as Week 2
+      var wk = tt.start ? Math.round((state.week - TT.mondayOfWeek(TT.parseDate(tt.start))) / 604800000) + 1 : null;
       var anyIn = [0,1,2,3,4,5,6].some(function(n){ return TT.dateInTerm(tt, addDays(state.week, n)); });
       var sub = !anyIn
         ? (tt.start && wEnd < TT.parseDate(tt.start) ? 'Before this semester starts (' + TT.fmtDate(TT.parseDate(tt.start)) + ')' : 'After this semester ends')
