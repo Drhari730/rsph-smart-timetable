@@ -41,6 +41,25 @@ CREATE TABLE IF NOT EXISTS electives (
   UNIQUE(prog, code)
 );
 
+-- Module-level syllabus content, sourced from the approved Course
+-- Specifications (via the existing MPH course-notes site's already-authored
+-- module breakdown). Modules are consumed in seq order against a course's
+-- real weekly timetable hours to work out which module falls on which
+-- calendar date — the "day-wise micro plan" the timetable itself doesn't
+-- carry. MHA has none yet; add rows here when its module content exists.
+CREATE TABLE IF NOT EXISTS course_modules (
+  id         SERIAL PRIMARY KEY,
+  prog       TEXT NOT NULL,
+  code       TEXT NOT NULL,               -- matches courses.code
+  seq        INT NOT NULL,                -- 1-based order within the course
+  title      TEXT NOT NULL,
+  hours      NUMERIC NOT NULL DEFAULT 0,  -- approved classroom hours for this module
+  objectives JSONB NOT NULL DEFAULT '[]', -- [{text,bloom,co}]
+  topics     JSONB NOT NULL DEFAULT '[]', -- [{text,priority}]
+  guide      JSONB NOT NULL DEFAULT '{}', -- {notesFocus,pptOutline[],videoIdea,readingIdea,exercise}
+  UNIQUE(prog, code, seq)
+);
+
 CREATE TABLE IF NOT EXISTS timetables (
   id         TEXT PRIMARY KEY,               -- e.g. 'mph-1'
   prog       TEXT NOT NULL,

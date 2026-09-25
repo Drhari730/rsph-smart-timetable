@@ -28,6 +28,10 @@ const RSPH_READY = fetch('/api/bootstrap', { credentials: 'same-origin' })
     RSPH.kinds = data.kinds || {};
     RSPH.electives = data.electives || {};
     RSPH.pending = data.pending || [];
+    // { 'mph:PHC501A': [ {seq,title,hours,objectives,topics,guide}, ... ] } — the
+    // day-wise syllabus plan behind a subject, keyed by "prog:code". Empty for
+    // any course that has no module plan entered yet (e.g. all of MHA so far).
+    RSPH.modules = data.modules || {};
 
     // courses: DB rows already match the {prog,sem,code,title,credits,type,notes} shape
     RSPH.courses = (data.courses || []).map(function (c) {

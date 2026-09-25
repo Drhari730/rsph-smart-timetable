@@ -3,6 +3,7 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const pool = require('./pool');
 const seed = require('./seed-data');
+const courseModulesSeed = require('./course-modules-seed');
 
 /* Runs on every boot. Creates tables if missing (cheap, idempotent), then
    seeds them ONLY if empty — so an admin's edits are never overwritten by a
@@ -17,6 +18,16 @@ async function migrate() {
   if (Number(courseCount) === 0) {
     console.log('[migrate] seeding courses, electives, timetables, site_settings...');
     await seedAll();
+  }
+
+  // Checked independently of the block above: course_modules is a table
+  // added after the first release, so it starts empty even on an
+  // already-seeded database — it needs its own "seed if empty" gate rather
+  // than piggybacking on courseCount, which is already non-zero by then.
+  const { rows: [{ count: moduleCount }] } = await pool.query('SELECT count(*)::int AS count FROM course_modules');
+  if (Number(moduleCount) === 0 && courseModulesSeed.length) {
+    console.log('[migrate] seeding course_modules...');
+    await seedCourseModules();
   }
 
   await syncAdminUser();
@@ -65,6 +76,28 @@ async function seedAll() {
       );
     }
 
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function seedCourseModules() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const m of courseModulesSeed) {
+      await client.query(
+        `INSERT INTO course_modules (prog, code, seq, title, hours, objectives, topics, guide)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT (prog, code, seq) DO NOTHING`,
+        [m.prog, m.code, m.seq, m.title, m.hours, JSON.stringify(m.objectives || []),
+         JSON.stringify(m.topics || []), JSON.stringify(m.guide || {})]
+      );
+    }
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK');

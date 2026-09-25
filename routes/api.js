@@ -12,7 +12,7 @@ const router = express.Router();
    ========================================================================= */
 router.get('/bootstrap', async (req, res) => {
   try {
-    const [settings, courses, electivesRows, timetables] = await Promise.all([
+    const [settings, courses, electivesRows, timetables, moduleRows] = await Promise.all([
       pool.query('SELECT key, value FROM site_settings'),
       pool.query('SELECT id, prog, sem, code, title, credits, type, notes, faculty FROM courses ORDER BY prog, sem, sort_order, code'),
       pool.query('SELECT prog, code, title FROM electives ORDER BY prog, sort_order, code'),
@@ -20,7 +20,8 @@ router.get('/bootstrap', async (req, res) => {
                          to_char(start_date,'YYYY-MM-DD') AS start,
                          to_char(end_date,'YYYY-MM-DD') AS end,
                          source, flags, slots, days
-                  FROM timetables ORDER BY prog, sem`)
+                  FROM timetables ORDER BY prog, sem`),
+      pool.query('SELECT prog, code, seq, title, hours, objectives, topics, guide FROM course_modules ORDER BY prog, code, seq')
     ]);
 
     const settingsMap = {};
@@ -43,6 +44,15 @@ router.get('/bootstrap', async (req, res) => {
     });
     pending.sort((a, b) => a.prog.localeCompare(b.prog) || a.sem - b.sem);
 
+    const modules = {}; // { 'mph:PHC501A': [ {seq,title,hours,objectives,topics,guide}, ... ] }
+    moduleRows.rows.forEach(m => {
+      const key = m.prog + ':' + m.code;
+      (modules[key] = modules[key] || []).push({
+        seq: m.seq, title: m.title, hours: Number(m.hours),
+        objectives: m.objectives, topics: m.topics, guide: m.guide
+      });
+    });
+
     res.json({
       meta: settingsMap.meta || {},
       programmes: settingsMap.programmes || {},
@@ -50,6 +60,7 @@ router.get('/bootstrap', async (req, res) => {
       courses: courses.rows,
       electives,
       timetables: timetables.rows,
+      modules,
       pending
     });
   } catch (e) {
@@ -256,6 +267,48 @@ router.put('/admin/timetables/:id', requireAdmin, async (req, res) => {
 router.delete('/admin/timetables/:id', requireAdmin, async (req, res) => {
   await pool.query('DELETE FROM timetables WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
+});
+
+/* =========================================================================
+   ADMIN — course modules (the day-wise syllabus plan behind a subject)
+   Edited whole-course-at-a-time: the admin panel sends the complete ordered
+   module list for one (prog, code) and it replaces whatever was there.
+   ========================================================================= */
+router.get('/admin/modules/:prog/:code', requireAdmin, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT seq, title, hours, objectives, topics, guide FROM course_modules WHERE prog=$1 AND code=$2 ORDER BY seq',
+    [req.params.prog, req.params.code]
+  );
+  res.json(rows);
+});
+
+router.put('/admin/modules/:prog/:code', requireAdmin, async (req, res) => {
+  const list = Array.isArray(req.body) ? req.body : null;
+  if (!list) return res.status(400).json({ error: 'Body must be a JSON array of modules.' });
+  const { prog, code } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM course_modules WHERE prog=$1 AND code=$2', [prog, code]);
+    let seq = 1;
+    for (const m of list) {
+      if (!m.title) throw Object.assign(new Error('Every module needs a title.'), { status: 400 });
+      await client.query(
+        `INSERT INTO course_modules (prog, code, seq, title, hours, objectives, topics, guide)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [prog, code, seq++, m.title, m.hours || 0,
+         JSON.stringify(m.objectives || []), JSON.stringify(m.topics || []), JSON.stringify(m.guide || {})]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true, count: list.length });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    if (e.status === 400) return res.status(400).json({ error: e.message });
+    console.error(e); res.status(500).json({ error: 'Could not save the module plan.' });
+  } finally {
+    client.release();
+  }
 });
 
 /* =========================================================================

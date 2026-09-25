@@ -80,13 +80,14 @@ function switchSection(name) {
   $$('#seg-section button').forEach(function (b) {
     b.setAttribute('aria-pressed', String(b.getAttribute('data-section') === name));
   });
-  ['guide', 'courses', 'electives', 'timetables', 'faculty', 'insights', 'account'].forEach(function (s) {
+  ['guide', 'courses', 'electives', 'timetables', 'modules', 'faculty', 'insights', 'account'].forEach(function (s) {
     document.getElementById('sec-' + s).style.display = (s === name) ? 'block' : 'none';
   });
   if (name === 'guide') renderGuide();
   if (name === 'courses') loadCourses();
   if (name === 'electives') loadElectives();
   if (name === 'timetables') loadTimetables();
+  if (name === 'modules') renderModulesSection();
   if (name === 'faculty') renderFaculty();
   if (name === 'insights') renderInsights();
   if (name === 'account') renderAccount();
@@ -167,6 +168,24 @@ function renderGuide() {
       '<p>Click <strong>Create timetable</strong> / <strong>Save changes</strong> when you&rsquo;re done. To remove an entire ' +
       'timetable, use <strong>Delete</strong> on its row in the list (or the button inside the editor) &mdash; this deletes every ' +
       'session in it, so there&rsquo;s no undo.</p>') +
+  '</div></div>';
+
+  html += '<div class="admin-card"><h2>Module Plans</h2><div class="lecture-guide" style="padding:0">' +
+    guideStep('&#128214;', 'The day-wise plan behind a subject',
+      '<p>This is what turns a recurring &ldquo;Biostatistics, Thursday&rdquo; slot into &ldquo;Biostatistics, Thursday 6 Nov &mdash; ' +
+      'Introduction to Biostatistics&rdquo; on the Calendar view. Pick a subject, click <strong>Load current plan</strong> to see what&rsquo;s ' +
+      'there (empty for anything without one yet), and edit the JSON directly &mdash; each module needs a <code>title</code> and its ' +
+      '<code>hours</code> (the approved classroom hours for that module; this is what decides how many real sessions it takes up), ' +
+      'plus optional objectives, topics and a teaching guide. <strong>Insert a blank module as a template</strong> appends a starter ' +
+      'you can fill in rather than typing the structure from scratch.</p>') +
+    guideStep('&#128260;', 'Nothing here is tied to a date',
+      '<p>Save replaces the whole ordered list for that subject. The Timetables page works out which module lands on which real date ' +
+      'itself &mdash; module 1&rsquo;s hours are consumed by that subject&rsquo;s first real sessions, then module 2 takes over, and so on, ' +
+      'against whichever timetable that subject is actually on. Edit an hours figure or the timetable itself and the whole plan reflows ' +
+      'automatically; nothing needs re-entering by date.</p>') +
+    guideStep('&#127891;', 'Currently MPH only',
+      '<p>All 9 MPH Semester 1 &amp; 3 subjects already have a plan, carried over from the course-notes site. MHA has none yet &mdash; ' +
+      'add it here the same way once that content exists.</p>') +
   '</div></div>';
 
   html += '<div class="admin-card"><h2>Faculty Load &amp; Insights &amp; Checks</h2><div class="lecture-guide" style="padding:0">' +
@@ -669,6 +688,114 @@ function wireEditor() {
 
 function debounce(fn, ms) {
   var h; return function () { clearTimeout(h); var a = arguments; h = setTimeout(function () { fn.apply(null, a); }, ms); };
+}
+
+/* ===========================================================================
+   MODULE PLANS — the day-wise syllabus behind a subject. Edited whole-course-
+   at-a-time as JSON (objectives/topics/teaching-guide nest too deeply for a
+   quick form); the Timetables' Calendar view sequences these automatically
+   against each course's real weekly hours, so nothing here mentions a date.
+   =========================================================================== */
+var SAMPLE_MODULE = {
+  title: 'Module title', hours: 6,
+  objectives: [{ text: 'By the end of this module, the student will be able to...', bloom: 'Understand', co: 'CO-1' }],
+  topics: [{ text: 'A topic covered in this module', priority: 'must' }],
+  guide: { notesFocus: '', pptOutline: [], videoIdea: '', readingIdea: '', exercise: '' }
+};
+
+function renderModulesSection() {
+  var sorted = RSPH.courses.slice().sort(function (a, b) {
+    return a.prog.localeCompare(b.prog) || a.sem - b.sem || a.code.localeCompare(b.code);
+  });
+  var options = sorted.map(function (c) {
+    var key = c.prog + '|' + c.code;
+    var mods = RSPH.modules[c.prog + ':' + c.code] || [];
+    return '<option value="' + key + '">' + RSPH.programmes[c.prog].short + ' Sem ' + c.sem + ' &middot; ' +
+      c.code + ' &mdash; ' + TT.plain(c.title) + ' (' + (mods.length ? mods.length + ' module' + (mods.length === 1 ? '' : 's') : 'none yet') + ')</option>';
+  });
+
+  var html = '<div class="page-title-bar" style="border-bottom:none;padding-bottom:0"><span class="eyebrow smallcaps">Day-wise syllabus</span>' +
+    '<h1 style="font-size:22px;margin:6px 0">Module Plans</h1>' +
+    '<p style="font-size:13.5px">Pick a subject, edit its module list as JSON, save. The Timetables page&rsquo;s Calendar view then ' +
+    'works out which module lands on which real date on its own, from each module&rsquo;s <code>hours</code> against that subject&rsquo;s ' +
+    'actual weekly timetable slots &mdash; nothing here is tied to a date.</p></div>' +
+
+    '<div class="admin-form">' +
+    '<label>Subject<select id="mp-course">' + options.join('') + '</select></label>' +
+    '<div class="actions" style="margin:4px 0 14px">' +
+      '<button class="mini-btn" id="mp-load" type="button">Load current plan</button>' +
+      '<button class="mini-btn" id="mp-sample" type="button">Insert a blank module as a template</button>' +
+    '</div>' +
+    '<label>Modules (JSON array, in teaching order)<textarea id="mp-json" rows="18" ' +
+      'style="font-family:ui-monospace,Consolas,monospace;font-size:12.5px;white-space:pre"></textarea></label>' +
+    '<p style="font-size:12px;color:var(--ink-soft);margin:-8px 0 12px">Each module: <code>title</code>, <code>hours</code> (approved ' +
+    'classroom hours &mdash; this is what drives how many sessions it consumes), <code>objectives</code> (<code>text</code>, ' +
+    '<code>bloom</code>, <code>co</code>), <code>topics</code> (<code>text</code>, <code>priority</code>: must / desirable / nice), ' +
+    'and <code>guide</code> (<code>notesFocus</code>, <code>pptOutline</code> array, <code>videoIdea</code>, <code>readingIdea</code>, ' +
+    '<code>exercise</code>). Leave any of those blank rather than deleting the key. Saving replaces the <strong>whole</strong> list for ' +
+    'this subject and re-numbers it in the order given.</p>' +
+    '<p class="form-error" id="mp-error"></p>' +
+    '<div class="actions"><button class="btn primary" id="mp-save" type="button">Save module plan</button></div>' +
+    '</div>' +
+
+    '<h3 style="margin-top:8px">All subjects with a plan on record</h3>' +
+    moduleSummaryTable();
+
+  document.getElementById('sec-modules').innerHTML = html;
+
+  document.getElementById('mp-load').addEventListener('click', function () {
+    var parts = document.getElementById('mp-course').value.split('|');
+    var err = document.getElementById('mp-error'); err.textContent = '';
+    api('GET', '/api/admin/modules/' + parts[0] + '/' + parts[1]).then(function (mods) {
+      document.getElementById('mp-json').value = JSON.stringify(mods.map(function (m) {
+        return { title: m.title, hours: Number(m.hours), objectives: m.objectives, topics: m.topics, guide: m.guide };
+      }), null, 2);
+      toast(mods.length ? mods.length + ' module(s) loaded.' : 'No plan on record yet for this subject — start from the template button.');
+    }).catch(function (e) { err.textContent = e.message; });
+  });
+
+  document.getElementById('mp-sample').addEventListener('click', function () {
+    var ta = document.getElementById('mp-json');
+    var current = [];
+    try { current = ta.value.trim() ? JSON.parse(ta.value) : []; } catch (e) { /* start fresh if it wasn't valid JSON */ }
+    current.push(JSON.parse(JSON.stringify(SAMPLE_MODULE)));
+    ta.value = JSON.stringify(current, null, 2);
+  });
+
+  document.getElementById('mp-save').addEventListener('click', function () {
+    var parts = document.getElementById('mp-course').value.split('|');
+    var err = document.getElementById('mp-error'); err.textContent = '';
+    var parsed;
+    try { parsed = JSON.parse(document.getElementById('mp-json').value || '[]'); }
+    catch (e) { err.textContent = 'That isn’t valid JSON: ' + e.message; return; }
+    if (!Array.isArray(parsed)) { err.textContent = 'Must be a JSON array of modules.'; return; }
+    api('PUT', '/api/admin/modules/' + parts[0] + '/' + parts[1], parsed).then(function () {
+      toast('Module plan saved (' + parsed.length + ' module' + (parsed.length === 1 ? '' : 's') + ').');
+      // Reflect the save in the in-memory RSPH.modules immediately (it was
+      // only populated once, at page load, from /api/bootstrap) so the
+      // summary table and dropdown counts below are correct without a reload.
+      RSPH.modules[parts[0] + ':' + parts[1]] = parsed.map(function (m, i) {
+        return { seq: i + 1, title: m.title, hours: Number(m.hours) || 0,
+                 objectives: m.objectives || [], topics: m.topics || [], guide: m.guide || {} };
+      });
+      renderModulesSection();
+    }).catch(function (e) { err.textContent = e.message; });
+  });
+}
+
+function moduleSummaryTable() {
+  var rows = Object.keys(RSPH.modules).sort().map(function (key) {
+    var parts = key.split(':'), prog = parts[0], code = parts[1];
+    var mods = RSPH.modules[key];
+    var c = RSPH.courses.filter(function (x) { return x.prog === prog && x.code === code; })[0];
+    var totalHours = mods.reduce(function (a, m) { return a + (Number(m.hours) || 0); }, 0);
+    return '<tr><td><span class="pill ' + prog + '">' + RSPH.programmes[prog].short + '</span></td>' +
+      '<td class="code">' + code + '</td><td>' + (c ? c.title : '&mdash;') + '</td>' +
+      '<td class="num">' + mods.length + '</td><td class="num">' + totalHours + ' h</td></tr>';
+  }).join('');
+  if (!rows) return '<p class="note"><span class="note-lbl">Nothing yet</span>No subject has a module plan on record.</p>';
+  return '<table class="data-table"><thead><tr><th>Programme</th><th>Code</th><th>Subject</th>' +
+    '<th class="num">Modules</th><th class="num">Total hours</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 /* ===========================================================================

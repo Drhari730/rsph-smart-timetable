@@ -295,11 +295,21 @@ RSPH_READY.then(function(){
         '<tbody>' + loadRows + '</tbody></table>' +
       covNote;
 
+    var calendarHint = state.view === 'calendar'
+      ? '<p class="note" style="margin:14px 0 0"><span class="note-lbl">Reading the calendar</span>' +
+        'A session with a <span style="color:var(--wine);font-weight:700">&#128214; module name</span> underneath it has a day-wise ' +
+        'plan on record &mdash; click it for that day&rsquo;s objectives, topics and teaching guide. Sessions without one (currently ' +
+        'everything outside MPH) just show the course name.</p>'
+      : '';
+    var dayPlanPanel = state.view === 'calendar' ? '<div id="day-plan-panel" class="day-plan-panel"></div>' : '';
+
     document.getElementById('body').innerHTML =
       meta + term + flags +
       TT.renderLegend(tt) +
       monthNav +
       main +
+      calendarHint +
+      dayPlanPanel +
       loadSection;
 
     /* legend chips filter by kind (grid / agenda views only) */
@@ -316,6 +326,18 @@ RSPH_READY.then(function(){
       tab.addEventListener('click', function(){
         state.month = { y: +tab.getAttribute('data-y'), m: +tab.getAttribute('data-m') };
         render();
+      });
+    });
+
+    /* day-wise module plan (calendar view only): click a session that has a
+       module plan to see that day's objectives, topics and teaching guide */
+    TT.$$('.cal-chip.has-module').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        TT.$$('.cal-chip.is-selected').forEach(function(x){ x.classList.remove('is-selected'); });
+        chip.classList.add('is-selected');
+        var panel = document.getElementById('day-plan-panel');
+        panel.innerHTML = TT.renderModuleDetail(tt, chip.getAttribute('data-plan-code'), chip.getAttribute('data-plan-date'));
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     });
   }

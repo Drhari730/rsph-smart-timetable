@@ -451,6 +451,74 @@ function sameYMD(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/* ===========================================================================
+   Day-wise module plan — which module of a subject's approved syllabus lands
+   on which real calendar date, worked out from that subject's own module
+   hours and its actual weekly timetable slots. Nothing here is typed in by
+   date; it is entirely derived, so a timetable edit or a module-hours edit
+   both immediately reflow the whole plan.
+   =========================================================================== */
+function courseModules(prog, code) {
+  return (RSPH.modules && RSPH.modules[prog + ':' + code]) || [];
+}
+
+function mondayOfWeek(d) {
+  const dow = (d.getDay() + 6) % 7; // 0 = Monday
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow);
+}
+
+const _moduleScheduleCache = {};
+
+/* Walks every real weekly occurrence of `code` on `tt` forward from the
+   timetable's own start date (or 1 September of the current year, when no
+   start date is on record — the same default the calendar view itself
+   falls back to), consuming each module's approved hours in order. Returns
+   [{ date, day, module, moduleIndex }], capped at `maxWeeks` (default ~2
+   semesters' worth) so a course with no end date doesn't run forever. */
+function moduleSchedule(tt, code, maxWeeks) {
+  maxWeeks = maxWeeks || 30;
+  const cacheKey = tt.id + '|' + code;
+  if (_moduleScheduleCache[cacheKey]) return _moduleScheduleCache[cacheKey];
+
+  const mods = courseModules(tt.prog, code);
+  const occurrences = [];
+  RSPH.DAYS.forEach(day => {
+    (tt.days[day] || []).forEach(b => { if (b.c === code) occurrences.push({ day, block: b }); });
+  });
+  let out = [];
+  if (mods.length && occurrences.length) {
+    occurrences.sort((a, b) => RSPH.DAYS.indexOf(a.day) - RSPH.DAYS.indexOf(b.day) || a.block.i - b.block.i);
+
+    const now = new Date();
+    const realStart = tt.start ? parseDate(tt.start) : new Date(now.getFullYear(), 8, 1);
+    const termEnd = tt.end ? parseDate(tt.end) : null;
+    const weekStart0 = mondayOfWeek(realStart);
+
+    let modIdx = 0, hoursUsed = 0;
+    outer:
+    for (let week = 0; week < maxWeeks; week++) {
+      for (const occ of occurrences) {
+        if (modIdx >= mods.length) break outer;
+        const idx = RSPH.DAYS.indexOf(occ.day);
+        const date = new Date(weekStart0.getFullYear(), weekStart0.getMonth(), weekStart0.getDate() + week * 7 + idx);
+        if (date < realStart) continue;
+        if (termEnd && date > termEnd) break outer;
+        out.push({ date, day: occ.day, module: mods[modIdx], moduleIndex: modIdx });
+        hoursUsed += netMinutes(tt, occ.block) / 60;
+        if (hoursUsed >= mods[modIdx].hours) { modIdx++; hoursUsed = 0; }
+      }
+    }
+  }
+  _moduleScheduleCache[cacheKey] = out;
+  return out;
+}
+
+function moduleForDate(tt, code, date) {
+  const sched = moduleSchedule(tt, code);
+  for (let i = 0; i < sched.length; i++) { if (sameYMD(sched[i].date, date)) return sched[i]; }
+  return null;
+}
+
 /* A standard Mon-Sun month grid. Days outside the timetable's own term dates
    (when known) are dimmed rather than hidden, so the shape of the month
    stays recognisable. */
@@ -484,14 +552,71 @@ function renderMonthCalendar(tt, year, month) {
       '<div class="cal-sessions">' + blocks.map(b => {
         const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
         const slot = tt.slots[b.i];
-        return '<div class="cal-chip" style="--k:' + k.color + ';--kbg:' + k.bg + '">' +
-          (slot ? '<span class="cal-chip-time">' + fmtHM(toMin(slot.s)) + '</span> ' : '') + b.t + '</div>';
+        const mod = b.c ? moduleForDate(tt, b.c, c.date) : null;
+        return '<div class="cal-chip' + (mod ? ' has-module' : '') + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
+          (mod ? ' data-plan-date="' + c.date.getFullYear() + '-' + String(c.date.getMonth() + 1).padStart(2, '0') + '-' + String(c.date.getDate()).padStart(2, '0') + '" data-plan-code="' + b.c + '" data-plan-tt="' + tt.id + '"' : '') + '>' +
+          (slot ? '<span class="cal-chip-time">' + fmtHM(toMin(slot.s)) + '</span> ' : '') + b.t +
+          (mod ? '<span class="cal-chip-module">&#128214; ' + mod.module.title + '</span>' : '') +
+        '</div>';
       }).join('') + '</div>' +
       (inTerm ? '' : '<span class="cal-out-tag">Not in term</span>') +
     '</div>';
   });
 
   h += '</div></div>';
+  return h;
+}
+
+/* The full module detail for one day's session — objectives, topics and the
+   lecture delivery guide — reusing the exact same CSS classes as the module
+   sheets on the MPH course-notes site, so it reads as the same document. */
+function guideRow(icon, label, bodyHTML) {
+  return '<div class="guide-row"><span class="guide-icon">' + icon + '</span>' +
+    '<div class="guide-body"><span class="guide-label">' + label + '</span>' + bodyHTML + '</div></div>';
+}
+const TOPIC_TAG_LABEL = { must: 'Must know', desirable: 'Desirable', nice: 'Nice to know' };
+
+function renderModuleDetail(tt, code, dateStr) {
+  const date = parseDate(dateStr);
+  const c = course(tt.prog, code);
+  const entry = date ? moduleForDate(tt, code, date) : null;
+  if (!entry) return '<p style="font-size:13.5px;color:var(--ink-soft)">No module plan on record for this date.</p>';
+  const m = entry.module, g = m.guide || {};
+
+  let h = '<div class="module-sheet"><div class="module-sheet-head">' +
+    '<span class="modnum">' + (entry.moduleIndex + 1) + '</span><h3>' + m.title + '</h3></div>' +
+    '<div style="padding:13px 20px;background:var(--surface-alt);border-bottom:1px solid var(--border);' +
+    'font-size:12.5px;color:var(--ink-soft)">' +
+      fmtDate(date) + ' &middot; ' + (c ? c.title : code) + ' <span style="color:var(--wine);font-weight:700">' + code + '</span>' +
+      ' &middot; ~' + m.hours + ' classroom hours for this module' +
+    '</div>';
+
+  if (m.objectives && m.objectives.length) {
+    h += '<div class="mod-objectives" style="padding:16px 20px 14px"><span class="mod-objectives-lbl">' +
+      '&#127919; Module objectives &mdash; by the end of this module, the student will be able to:</span><ol>' +
+      m.objectives.map(o => '<li><span class="obj-text">' + o.text + '</span>' +
+        (o.bloom ? '<span class="bloom-chip">' + o.bloom + '</span>' : '') +
+        (o.co ? '<span class="co-chip">' + o.co + '</span>' : '') + '</li>').join('') +
+    '</ol></div>';
+  }
+  if (m.topics && m.topics.length) {
+    h += '<ul style="padding:14px 24px 16px;list-style:none;display:flex;flex-direction:column;gap:8px;' +
+      'background:var(--surface);border-top:1px dashed var(--border)">' +
+      m.topics.map(t => '<li style="font-size:13.5px;color:var(--ink);position:relative;padding-left:16px">' +
+        '<span style="position:absolute;left:0;color:var(--wine)">&bull;</span>' + t.text +
+        '<span class="topic-tag ' + t.priority + '">' + (TOPIC_TAG_LABEL[t.priority] || t.priority) + '</span></li>').join('') +
+    '</ul>';
+  }
+  if (g.notesFocus || g.videoIdea || g.readingIdea || g.exercise || (g.pptOutline && g.pptOutline.length)) {
+    h += '<div class="lecture-guide" style="padding:16px 22px 20px">';
+    if (g.notesFocus) h += guideRow('&#128221;', 'Lecture Notes Focus', '<p>' + g.notesFocus + '</p>');
+    if (g.pptOutline && g.pptOutline.length) h += guideRow('&#128421;&#65039;', 'Suggested PPT Outline', '<ol>' + g.pptOutline.map(x => '<li>' + x + '</li>').join('') + '</ol>');
+    if (g.videoIdea) h += guideRow('&#127909;', 'Video Idea', '<p>' + g.videoIdea + '</p>');
+    if (g.readingIdea) h += guideRow('&#128196;', 'Article / Reading Idea', '<p>' + g.readingIdea + '</p>');
+    if (g.exercise) h += guideRow('&#129514;', 'Hands-on Exercise', '<p>' + g.exercise + '</p>');
+    h += '</div>';
+  }
+  h += '</div>';
   return h;
 }
 
@@ -588,6 +713,7 @@ global.TT = {
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
+  courseModules, moduleSchedule, moduleForDate, renderModuleDetail,
   mountChrome, reveal, countUp
 };
 
