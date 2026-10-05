@@ -93,7 +93,8 @@
 .tt-notes{font-size:10.5px;font-weight:700;color:var(--k);margin-top:2px;opacity:0;transition:opacity .16s ease;}
 .tt-cell:hover .tt-notes{opacity:1;}
 .tt-td.is-live .tt-cell{box-shadow:0 0 0 2px var(--coral),0 6px 18px rgba(222,68,33,.25);}
-.tt-td.is-live .tt-cell::after{content:"Now";position:absolute;}
+.tt-td.is-live .tt-cell{position:relative;}
+.tt-td.is-live .tt-cell::after{content:"Now";position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--coral);padding:1px 7px;border-radius:999px;}
 .tt-td.is-live{position:relative;}
 
 /* --- legend -------------------------------------------------------------- */
