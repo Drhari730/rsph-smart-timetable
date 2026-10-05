@@ -44,6 +44,7 @@
     <button class="btn" id="btn-ics" type="button">&#128197; Add to calendar</button>
     <button class="btn" id="btn-png" type="button">&#8681; Download PNG</button>
     <button class="btn" id="btn-pdf" type="button">&#8681; Download PDF</button>
+    <button class="btn" id="btn-xlsx" type="button" title="Spreadsheet in the same layout and colours, with the day-wise teaching plan">&#8681; Download Excel</button>
     <button class="btn primary" id="btn-print" type="button">&#128438; Print</button>
   </div>
 </div>
@@ -57,6 +58,8 @@
 <script src="assets/app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="assets/excel.js"></script>
 <script>
 RSPH_READY.then(function(){
   TT.mountChrome('timetable.html');
@@ -126,6 +129,18 @@ RSPH_READY.then(function(){
   });
   document.getElementById('btn-png').addEventListener('click', function(){ exportImage('png'); });
   document.getElementById('btn-pdf').addEventListener('click', function(){ exportImage('pdf'); });
+  document.getElementById('btn-xlsx').addEventListener('click', function(){
+    var tt = TT.getTT(state.prog, state.sem);
+    if (!tt) { alert('No timetable is issued for this selection yet.'); return; }
+    var btn = this, label = btn.textContent;
+    btn.textContent = 'Preparing…'; btn.disabled = true;
+    // grid / day-by-day: the week on screen, with that week's modules;
+    // calendar: the plain recurring week
+    Promise.resolve().then(function(){
+      return TT_EXCEL.downloadExcel(tt, { weekStart: state.view === 'calendar' ? null : state.week });
+    }).catch(function(e){ console.error(e); alert('Could not generate the spreadsheet. Please try again.'); })
+      .then(function(){ btn.textContent = label; btn.disabled = false; });
+  });
 
   /* Renders the currently-selected programme/semester/view into an offscreen
      node (so the exported file matches exactly what's on screen, minus the

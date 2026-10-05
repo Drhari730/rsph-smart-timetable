@@ -40,11 +40,11 @@ const kinds = {
 };
 
 const courses = [
-  { prog:'mph', sem:1, code:'PHC501A', title:'Principles and Practice of Public Health', credits:3, type:'core', notes:'phc501a.html' },
-  { prog:'mph', sem:1, code:'PHC502A', title:'Public Health Systems &amp; Health Policy', credits:4, type:'core', notes:'phc502a.html' },
-  { prog:'mph', sem:1, code:'PHC503A', title:'Epidemiology', credits:3, type:'core', notes:'phc503a.html' },
-  { prog:'mph', sem:1, code:'PHC504B', title:'Healthcare Management and Leadership', credits:4, type:'core', notes:'phc504b.html' },
-  { prog:'mph', sem:1, code:'PHC505A', title:'Biostatistics', credits:4, type:'core', notes:'phc505a.html' },
+  { prog:'mph', sem:1, code:'PHC501A', title:'Principles and Practice of Public Health', credits:3, type:'core', notes:'phc501a.html', faculty:'Dr. Tejaswini B. D' },
+  { prog:'mph', sem:1, code:'PHC502A', title:'Public Health Systems &amp; Health Policy', credits:4, type:'core', notes:'phc502a.html', faculty:'Dr. G Hari Prakash' },
+  { prog:'mph', sem:1, code:'PHC503A', title:'Epidemiology', credits:3, type:'core', notes:'phc503a.html', faculty:'Dr. Tejaswini B. D / Community Medicine faculty' },
+  { prog:'mph', sem:1, code:'PHC504B', title:'Healthcare Management and Leadership', credits:4, type:'core', notes:'phc504b.html', faculty:'Dr. G Hari Prakash' },
+  { prog:'mph', sem:1, code:'PHC505A', title:'Biostatistics', credits:4, type:'core', notes:'phc505a.html', faculty:'Dr. G Hari Prakash / Community Medicine faculty' },
   { prog:'mph', sem:1, code:'PHO501A', title:'Open / Generic Elective &ndash; 1 (O/GEC-1)', credits:2, type:'ogec' },
 
   { prog:'mph', sem:2, code:'PHC506A', title:'Public Health Priorities in India &mdash; I (Communicable Diseases)', credits:4, type:'core', notes:'phc506a.html' },
@@ -82,7 +82,7 @@ const courses = [
   { prog:'mha', sem:2, code:'HAE5XXA', title:'Major Discipline Elective &ndash; 1 (MDEC-1)', credits:2, type:'elective' },
   { prog:'mha', sem:2, code:'HAL513C', title:'Hospital / Practical Training &ndash; 2', credits:4, type:'experiential' },
 
-  { prog:'mha', sem:3, code:'HAC601C', title:'Legal Aspects and Ethics in Healthcare', credits:3, type:'core', faculty:'Dr. Deepthi' },
+  { prog:'mha', sem:3, code:'HAC601C', title:'Legal Aspects and Ethics in Healthcare', credits:3, type:'core', faculty:'Dr. Aileen J' },
   { prog:'mha', sem:3, code:'HAC602C', title:'Healthcare Analytics and Operational Research', credits:3, type:'core', faculty:'Dr. V. V. Subba Rao Adhikari' },
   { prog:'mha', sem:3, code:'HAC603C', title:'Marketing and Strategy Management in Healthcare', credits:4, type:'core', faculty:'Dr. Mrinalini' },
   { prog:'mha', sem:3, code:'HAE6XXA', title:'Major Discipline Elective &ndash; 2 (MDEC-2)', credits:2, type:'elective' },
@@ -140,59 +140,267 @@ const SLOTS_MHA = [
 
 const timetables = [
   {
-    id: 'mph-1', prog: 'mph', sem: 1,
-    batch: '2026', ay: '2026-27',
-    faculty: 'Faculty of Life and Allied Health Sciences',
-    venue: 'Classroom 1 / available classroom',
-    start: null, end: null,
-    source: 'Timetables MPH.docx &middot; School of Public Health',
-    flags: [
-      'Start Date and End Date are blank in the source document.',
-      'The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.'
+    "id": "mph-1",
+    "prog": "mph",
+    "sem": 1,
+    "batch": "2026",
+    "ay": "2026-27",
+    "faculty": "Faculty of Life and Allied Health Sciences",
+    "venue": "Classroom 1 / available classroom",
+    "start": null,
+    "end": null,
+    "source": "MPH Programme &ndash; Semester 1 Timetable (revised, Oct 2026) &middot; School of Public Health",
+    "flags": [
+      "Start Date and End Date are not on record &mdash; the day-wise module plan assumes teaching from 1 September until a start date is entered.",
+      "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected."
     ],
-    slots: SLOTS_MPH,
-    days: {
-      Mon: [
-        { i:0, n:3, t:'Postings / Field Visit', k:'field' },
-        { i:4, n:1, t:'Principles and Practice of Public Health', c:'PHC501A', k:'lecture' },
-        { i:5, n:1, t:'Healthcare Management and Leadership', c:'PHC504B', k:'lecture' },
-        { i:6, n:1, t:'Epidemiology', c:'PHC503A', k:'lecture' }
+    "slots": [
+      {
+        "s": "09:00",
+        "e": "10:45",
+        "label": "9:00 &ndash; 10:45 am"
+      },
+      {
+        "s": "10:45",
+        "e": "12:00",
+        "label": "10:45 am &ndash; 12:00 pm"
+      },
+      {
+        "s": "12:00",
+        "e": "13:15",
+        "label": "12:00 &ndash; 1:15 pm"
+      },
+      {
+        "s": "13:15",
+        "e": "14:00",
+        "label": "1:15 &ndash; 2:00 pm",
+        "lunch": true
+      },
+      {
+        "s": "14:00",
+        "e": "15:00",
+        "label": "2:00 &ndash; 3:00 pm"
+      },
+      {
+        "s": "15:00",
+        "e": "16:00",
+        "label": "3:00 &ndash; 4:00 pm"
+      },
+      {
+        "s": "16:00",
+        "e": "17:00",
+        "label": "4:00 &ndash; 5:00 pm"
+      }
+    ],
+    "days": {
+      "Mon": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Principles and Practice of Public Health",
+          "c": "PHC501A",
+          "f": "Dr. Tejaswini B. D",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Seminar",
+          "k": "academic"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Group Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Seminar / Article Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 1,
+          "t": "Seminar",
+          "k": "academic"
+        },
+        {
+          "i": 6,
+          "n": 1,
+          "t": "Mentor&ndash;Mentee Meeting",
+          "k": "mentoring"
+        }
       ],
-      Tue: [
-        { i:0, n:3, t:'Postings / Field Visit', k:'field' },
-        { i:4, n:1, t:'Public Health Systems and Health Policy', c:'PHC502A', k:'lecture' },
-        { i:5, n:2, t:'Biostatistics', c:'PHC505A', k:'lecture' }
+      "Tue": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Biostatistics",
+          "c": "PHC505A",
+          "f": "Dr. G Hari Prakash / Community Medicine faculty",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Seminar",
+          "k": "academic"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Hands-on Exercises",
+          "k": "academic"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Seminar / Article Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 2,
+          "t": "Biostatistics",
+          "c": "PHC505A",
+          "f": "Dr. G Hari Prakash / Community Medicine faculty",
+          "k": "lecture"
+        }
       ],
-      Wed: [
-        { i:0, n:3, t:'Postings / Field Visit', k:'field' },
-        { i:4, n:1, t:'Epidemiology', c:'PHC503A', k:'lecture' },
-        { i:5, n:1, t:'Remedial Classes', k:'remedial' },
-        { i:6, n:1, t:'Biostatistics', c:'PHC505A', k:'lecture' }
+      "Wed": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Public Health Systems and Health Policy",
+          "c": "PHC502A",
+          "f": "Dr. G Hari Prakash",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Seminar",
+          "k": "academic"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Group Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Guest Lecture / Brainstorming Session",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 1,
+          "t": "Seminar",
+          "k": "academic"
+        },
+        {
+          "i": 6,
+          "n": 1,
+          "t": "Remedial Classes",
+          "k": "remedial"
+        }
       ],
-      Thu: [
-        { i:0, n:1, t:'Biostatistics', c:'PHC505A', k:'lecture' },
-        { i:1, n:1, t:'Journal Club', k:'academic' },
-        { i:2, n:1, t:'Guest Lecture', k:'academic' },
-        { i:4, n:1, t:'Seminar / Article Discussion', k:'academic' },
-        { i:5, n:1, t:'Journal Club', k:'academic' },
-        { i:6, n:1, t:'Public Health Systems and Health Policy', c:'PHC502A', k:'lecture' }
+      "Thu": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Epidemiology",
+          "c": "PHC503A",
+          "f": "Dr. Tejaswini B. D / Community Medicine faculty",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Guest Lecture",
+          "k": "academic"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Journal Club",
+          "k": "academic"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Seminar / Article Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 2,
+          "t": "Case-based Discussion",
+          "k": "academic"
+        }
       ],
-      Fri: [
-        { i:0, n:1, t:'Healthcare Management and Leadership', c:'PHC504B', k:'lecture' },
-        { i:1, n:1, t:'Biostatistics', c:'PHC505A', k:'lecture' },
-        { i:2, n:1, t:'Mentor&ndash;Mentee Meeting', k:'mentoring' },
-        { i:4, n:1, t:'Seminar / Article Discussion', k:'academic' },
-        { i:5, n:1, t:'Public Health Lecture Series', k:'academic' },
-        { i:6, n:1, t:'Principles and Practice of Public Health', c:'PHC501A', k:'lecture' }
+      "Fri": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Healthcare Management and Leadership",
+          "c": "PHC504B",
+          "f": "Dr. G Hari Prakash",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Biostatistics",
+          "c": "PHC505A",
+          "f": "Dr. G Hari Prakash / Community Medicine faculty",
+          "k": "lecture"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Mentor&ndash;Mentee Meeting",
+          "k": "mentoring"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Seminar / Article Discussion",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 1,
+          "t": "Public Health Lecture Series",
+          "k": "academic"
+        },
+        {
+          "i": 6,
+          "n": 1,
+          "t": "Principles and Practice of Public Health",
+          "c": "PHC501A",
+          "f": "Dr. Tejaswini B. D",
+          "k": "lecture"
+        }
       ],
-      Sat: [
-        { i:0, n:1, t:'Epidemiology', c:'PHC503A', k:'lecture' },
-        { i:1, n:1, t:'Public Health Systems and Health Policy', c:'PHC502A', k:'lecture' },
-        { i:2, n:1, t:'O/GEC-1', c:'PHO501A', k:'elective' },
-        { i:4, n:3, t:'Brainstorming Session', k:'academic' }
-      ],
-      Sun: [
-        { i:0, n:4, t:'Health Camp <em>(if planned by hospital)</em>', k:'optional' }
+      "Sat": [
+        {
+          "i": 0,
+          "n": 3,
+          "t": "O/GEC-1",
+          "c": "PHO501A",
+          "k": "elective"
+        },
+        {
+          "i": 4,
+          "n": 3,
+          "t": "Brainstorming Session",
+          "k": "academic"
+        }
       ]
     }
   },

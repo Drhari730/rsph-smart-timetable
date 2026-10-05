@@ -878,7 +878,16 @@ function renderFaculty() {
     });
   });
   var byFacultySubject = {};
-  subjectRows.forEach(function (r) { if (r.faculty) (byFacultySubject[r.faculty] = byFacultySubject[r.faculty] || []).push(r); });
+  // "Dr. A / Community Medicine faculty" is a shared subject: list it under
+  // each name, flagged with who it is shared with
+  subjectRows.forEach(function (r) {
+    if (!r.faculty) return;
+    var names = TT.plain(r.faculty).split(/\s+\/\s+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    names.forEach(function (n) {
+      var row = Object.assign({}, r, { sharedWith: names.filter(function (o) { return o !== n; }) });
+      (byFacultySubject[n] = byFacultySubject[n] || []).push(row);
+    });
+  });
   var unassignedSubjects = subjectRows.filter(function (r) { return !r.faculty; });
   var facultyNames = Object.keys(byFacultySubject).sort();
 
@@ -891,7 +900,8 @@ function renderFaculty() {
     var rows = list.map(function (r) {
       var p = RSPH.programmes[r.prog];
       return '<tr><td><span class="pill ' + r.prog + '">' + p.short + '</span> Sem ' + r.sem + '</td>' +
-        '<td class="code">' + r.code + '</td><td>' + r.title + '</td>' +
+        '<td class="code">' + r.code + '</td><td>' + r.title +
+          (r.sharedWith && r.sharedWith.length ? ' <span class="pill mute">Shared with ' + r.sharedWith.join(', ') + '</span>' : '') + '</td>' +
         '<td class="num">' + r.credits + '</td>' +
         '<td class="num">' + (r.minutes ? TT.hrs(r.minutes) : (r.present === false ? '<span class="pill mute">No timetable</span>' : '&mdash;')) + '</td>' +
         '<td class="num">' + (r.weeks && r.minutes ? Math.round(r.minutes / 60 * r.weeks * 10) / 10 + ' h' : '&mdash;') + '</td></tr>';
