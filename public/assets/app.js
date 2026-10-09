@@ -358,9 +358,20 @@ function matches(b, f) {
    (a Monday) it becomes a specific week: real dates on each row and, for
    subjects with a module plan, the module that falls on that date. Without
    it (e.g. the admin preview) it stays the plain recurring template. */
+/* Days with sessions; with opts.from/opts.to (and a weekStart) only those
+   whose date falls inside that range — used by the date-range downloads. */
+function shownDays(tt, opts) {
+  return RSPH.DAYS.filter(d => {
+    if (!tt.days[d] || !tt.days[d].length) return false;
+    if (!opts.weekStart || (!opts.from && !opts.to)) return true;
+    const dt = dateInWeek(opts.weekStart, d);
+    return (!opts.from || dt >= opts.from) && (!opts.to || dt <= opts.to);
+  });
+}
+
 function renderGrid(tt, opts) {
   opts = opts || {};
-  const days = RSPH.DAYS.filter(d => tt.days[d] && tt.days[d].length);
+  const days = shownDays(tt, opts);
   const nowD = new Date();
   const todayKey = RSPH.DAYS[(nowD.getDay() + 6) % 7];
   const liveOK = inTerm(tt, nowD) === true;
@@ -419,7 +430,7 @@ function renderGrid(tt, opts) {
    in the same way as the grid when opts.weekStart is given. */
 function renderAgenda(tt, opts) {
   opts = opts || {};
-  const days = RSPH.DAYS.filter(d => tt.days[d] && tt.days[d].length);
+  const days = shownDays(tt, opts);
   const nowD = new Date();
   const todayKey = RSPH.DAYS[(nowD.getDay() + 6) % 7];
   const liveOK = inTerm(tt, nowD) === true;

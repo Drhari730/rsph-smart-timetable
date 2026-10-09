@@ -49,6 +49,30 @@
   </div>
 </div>
 
+<!-- download range: which dates the Excel / PNG / PDF downloads cover -->
+<div class="range-bar no-print" id="range-bar">
+  <div class="control-group">
+    <label for="r-from">Download from</label>
+    <input class="ctrl-input" type="date" id="r-from"/>
+  </div>
+  <div class="control-group">
+    <label for="r-to">To</label>
+    <input class="ctrl-input" type="date" id="r-to"/>
+  </div>
+  <div class="control-group">
+    <label>Quick duration from the start date</label>
+    <div class="seg" id="seg-range">
+      <button type="button" data-range="shown">Week on screen</button>
+      <button type="button" data-range="1w">1 week</button>
+      <button type="button" data-range="1m">1 month</button>
+      <button type="button" data-range="2m">2 months</button>
+      <button type="button" data-range="3m">3 months</button>
+      <button type="button" data-range="term">Whole semester</button>
+    </div>
+  </div>
+  <p class="range-sum" id="r-sum"></p>
+</div>
+
 <div id="body"></div>
 
 </main>
@@ -129,78 +153,172 @@ RSPH_READY.then(function(){
   });
   document.getElementById('btn-png').addEventListener('click', function(){ exportImage('png'); });
   document.getElementById('btn-pdf').addEventListener('click', function(){ exportImage('pdf'); });
+  /* ---------- download range ---------- */
+  // null = follow the week on screen; otherwise {from, to} the user picked
+  var range = null;
+  function isoOf(d){ return TT.ymd(d); }
+  function currentRange(){
+    if (range) return range;
+    return { from: state.week, to: addDays(state.week, 6) };
+  }
+  function addMonths(d, n){ return new Date(d.getFullYear(), d.getMonth() + n, d.getDate()); }
+  function syncRangeUI(){
+    var r = currentRange();
+    document.getElementById('r-from').value = isoOf(r.from);
+    document.getElementById('r-to').value = isoOf(r.to);
+    var days = Math.round((r.to - r.from) / 86400000) + 1;
+    var weeks = 0, w = TT.mondayOfWeek(r.from);
+    while (w <= r.to) { weeks++; w = addDays(w, 7); }
+    document.getElementById('r-sum').innerHTML = 'Downloads cover <strong>' + TT.fmtDate(r.from) + ' &ndash; ' + TT.fmtDate(r.to) +
+      '</strong> (' + days + ' day' + (days === 1 ? '' : 's') + ', ' + weeks + ' week' + (weeks === 1 ? '' : 's') + '). ' +
+      'Excel: a day-by-day schedule plus one sheet per week. PDF: one page per ' + (state.view === 'calendar' ? 'month' : 'week') +
+      '. PNG: one image.' + (range ? '' : ' Following the week on screen.');
+    TT.$$('#seg-range button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.range === (range ? range.preset : 'shown'))); });
+  }
+  function readInputs(){
+    var f = TT.parseDate(document.getElementById('r-from').value), t = TT.parseDate(document.getElementById('r-to').value);
+    if (!f) return;
+    if (!t || t < f) t = f;
+    if ((t - f) / 86400000 > 400) t = addDays(f, 400);
+    range = { from: f, to: t, preset: null };
+    syncRangeUI();
+  }
+  document.getElementById('r-from').addEventListener('change', function(){
+    // keep the chosen duration when only the start moves
+    var r = currentRange(), f = TT.parseDate(this.value); if (!f) return;
+    var len = Math.round((r.to - r.from) / 86400000);
+    var p = range && range.preset;
+    var t = p === '1m' ? addDays(addMonths(f, 1), -1) : p === '2m' ? addDays(addMonths(f, 2), -1)
+          : p === '3m' ? addDays(addMonths(f, 3), -1) : addDays(f, len);
+    range = { from: f, to: t, preset: p && p !== 'term' && p !== 'shown' ? p : null };
+    syncRangeUI();
+  });
+  document.getElementById('r-to').addEventListener('change', readInputs);
+  document.getElementById('seg-range').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-range]'); if (!b) return;
+    var v = b.dataset.range, tt = TT.getTT(state.prog, state.sem);
+    var f = range ? range.from : state.week;
+    if (v === 'shown') { range = null; }
+    else if (v === '1w') range = { from: f, to: addDays(f, 6), preset: v };
+    else if (v === '1m') range = { from: f, to: addDays(addMonths(f, 1), -1), preset: v };
+    else if (v === '2m') range = { from: f, to: addDays(addMonths(f, 2), -1), preset: v };
+    else if (v === '3m') range = { from: f, to: addDays(addMonths(f, 3), -1), preset: v };
+    else if (v === 'term') {
+      var ms = TT.monthList(tt);
+      var s = tt.start ? TT.parseDate(tt.start) : new Date(ms[0].y, ms[0].m, 1);
+      var en = tt.end ? TT.parseDate(tt.end) : new Date(ms[ms.length-1].y, ms[ms.length-1].m + 1, 0);
+      range = { from: s, to: en, preset: v };
+    }
+    syncRangeUI();
+  });
+
+  function weeksIn(r){
+    var out = [], w = TT.mondayOfWeek(r.from);
+    while (w <= r.to && out.length < 60) { out.push(w); w = addDays(w, 7); }
+    return out;
+  }
+  function monthsIn(r){
+    var out = [], y = r.from.getFullYear(), m = r.from.getMonth();
+    while (new Date(y, m, 1) <= r.to && out.length < 14) { out.push({y: y, m: m}); m++; if (m > 11) { m = 0; y++; } }
+    return out;
+  }
+  function rangeTag(r){ return TT.ymd(r.from) + '-to-' + TT.ymd(r.to); }
+
   document.getElementById('btn-xlsx').addEventListener('click', function(){
     var tt = TT.getTT(state.prog, state.sem);
     if (!tt) { alert('No timetable is issued for this selection yet.'); return; }
     var btn = this, label = btn.textContent;
     btn.textContent = 'Preparing…'; btn.disabled = true;
-    // grid / day-by-day: the week on screen, with that week's modules;
-    // calendar: the plain recurring week
+    var r = currentRange();
     Promise.resolve().then(function(){
-      return TT_EXCEL.downloadExcel(tt, { weekStart: state.view === 'calendar' ? null : state.week });
+      return TT_EXCEL.downloadExcel(tt, { from: r.from, to: r.to });
     }).catch(function(e){ console.error(e); alert('Could not generate the spreadsheet. Please try again.'); })
       .then(function(){ btn.textContent = label; btn.disabled = false; });
   });
 
-  /* Renders the currently-selected programme/semester/view into an offscreen
-     node (so the exported file matches exactly what's on screen, minus the
-     controls) and rasterises it with html2canvas. */
+  /* Renders the chosen dates in the current view (grid / day by day: one
+     block per week; calendar: one per month) into offscreen nodes that
+     match what's on screen, and rasterises them with html2canvas. PDF gets
+     one page per block; PNG stacks them into a single image. */
   function exportImage(kind){
     var tt = TT.getTT(state.prog, state.sem);
     if (!tt) { alert('No timetable is issued for this selection yet.'); return; }
     var p = RSPH.programmes[state.prog];
+    var r = currentRange();
     var btn = document.getElementById(kind === 'pdf' ? 'btn-pdf' : 'btn-png');
-    var label = btn.textContent; btn.textContent = 'Preparing…'; btn.disabled = true;
+    var label = btn.textContent; btn.disabled = true;
 
-    var node = document.createElement('div');
-    node.style.cssText = 'position:fixed;left:-100000px;top:0;background:#FBF6F1;padding:26px;width:1360px;' +
-      "font-family:'Source Serif 4',Georgia,serif;color:#3D2B49;";
-    node.innerHTML =
-      '<div style="margin-bottom:16px">' +
+    var header = function(sub){
+      return '<div style="margin-bottom:14px">' +
         '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#C0383A;font-weight:700">' +
           RSPH.meta.school + '</div>' +
         '<div style="font-family:\'Playfair Display\',Georgia,serif;font-weight:700;font-size:24px;color:#381A6B;margin:6px 0">' +
           p.name + ' &mdash; Semester ' + state.sem + '</div>' +
         '<div style="font-size:12.5px;color:#7A6C7D">Batch ' + tt.batch + ' &middot; Academic Year ' + tt.ay +
-          ' &middot; ' + tt.venue + ' &middot; Downloaded ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '</div>' +
-      '</div>' +
-      TT.renderLegend(tt) +
-      (state.view !== 'calendar' && state.week ? '<div class="month-title" style="margin-bottom:10px">Week of ' +
-          TT.fmtDate(state.week) + ' &ndash; ' + TT.fmtDate(addDays(state.week, 6)) + '</div>' : '') +
-      (state.view === 'grid' ? TT.renderGrid(tt, {weekStart: state.week})
-        : state.view === 'agenda' ? TT.renderAgenda(tt, {weekStart: state.week})
-        : (function(){
-            var mm = state.month || TT.monthList(tt)[0];
-            return '<div class="month-title" style="margin-bottom:10px">' + TT.MONTH_NAMES[mm.m] + ' ' + mm.y + '</div>' +
-                   TT.renderMonthCalendar(tt, mm.y, mm.m);
-          })());
-    document.body.appendChild(node);
+          ' &middot; ' + tt.venue + ' &middot; ' + TT.fmtDate(r.from) + ' &ndash; ' + TT.fmtDate(r.to) +
+          ' &middot; Downloaded ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '</div>' +
+      '</div>' + TT.renderLegend(tt) + '<div class="month-title" style="margin:6px 0 10px">' + sub + '</div>';
+    };
+    var blocks = state.view === 'calendar'
+      ? monthsIn(r).map(function(mm){
+          return { title: TT.MONTH_NAMES[mm.m] + ' ' + mm.y, html: TT.renderMonthCalendar(tt, mm.y, mm.m) };
+        })
+      : weeksIn(r).map(function(w){
+          var a = w < r.from ? r.from : w, e = addDays(w, 6); if (e > r.to) e = r.to;
+          var o = { weekStart: w, from: r.from, to: r.to };
+          return { title: 'Week of ' + TT.fmtDate(a) + ' &ndash; ' + TT.fmtDate(e),
+                   html: state.view === 'grid' ? TT.renderGrid(tt, o) : TT.renderAgenda(tt, o) };
+        });
 
-    html2canvas(node, { scale: 2, backgroundColor: '#FBF6F1', windowWidth: 1360 }).then(function (canvas) {
-      var fname = 'RSPH-' + p.short + '-Sem' + state.sem;
-      if (kind === 'png') {
+    var mk = function(inner){
+      var node = document.createElement('div');
+      node.style.cssText = 'position:fixed;left:-100000px;top:0;background:#FBF6F1;padding:26px;width:1360px;' +
+        "font-family:'Source Serif 4',Georgia,serif;color:#3D2B49;";
+      node.innerHTML = inner;
+      document.body.appendChild(node);
+      return node;
+    };
+    var shoot = function(node, scale){
+      return html2canvas(node, { scale: scale, backgroundColor: '#FBF6F1', windowWidth: 1360 })
+        .then(function(c){ document.body.removeChild(node); return c; },
+              function(e){ document.body.removeChild(node); throw e; });
+    };
+    var fname = 'RSPH-' + p.short + '-Sem' + state.sem + '-' + rangeTag(r);
+    var done = function(){ btn.textContent = label; btn.disabled = false; };
+    var fail = function(e){ console.error(e); alert('Could not generate the file. Please try again.'); };
+
+    if (kind === 'png') {
+      btn.textContent = 'Preparing…';
+      var node = mk(blocks.map(function(b, i){
+        return (i === 0 ? header(b.title) : '<div class="month-title" style="margin:28px 0 10px">' + b.title + '</div>') + b.html;
+      }).join(''));
+      // browsers cap canvas height (~32k px), so long ranges render at a lower scale
+      var scale = Math.max(0.5, Math.min(2, 30000 / Math.max(1, node.offsetHeight)));
+      shoot(node, scale).then(function(canvas){
         var a = document.createElement('a');
         a.download = fname + '.png';
         a.href = canvas.toDataURL('image/png');
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      } else {
-        var jsPDF = window.jspdf.jsPDF;
-        var orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
-        var pdf = new jsPDF({ orientation: orientation, unit: 'pt', format: 'a4' });
-        var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
-        var margin = 24;
-        var imgW = pageW - margin * 2;
-        var imgH = canvas.height * imgW / canvas.width;
+      }).catch(fail).then(done);
+      return;
+    }
+
+    var jsPDF = window.jspdf.jsPDF;
+    var pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight(), margin = 24;
+    var i = 0;
+    (function next(){
+      if (i >= blocks.length) { pdf.save(fname + '.pdf'); done(); return; }
+      btn.textContent = 'Page ' + (i + 1) + ' of ' + blocks.length + '…';
+      var b = blocks[i];
+      shoot(mk(header(b.title) + b.html), 1.6).then(function(canvas){
+        if (i > 0) pdf.addPage('a4', 'landscape');
+        var imgW = pageW - margin * 2, imgH = canvas.height * imgW / canvas.width;
         if (imgH > pageH - margin * 2) { imgH = pageH - margin * 2; imgW = canvas.width * imgH / canvas.height; }
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW, imgH);
-        pdf.save(fname + '.pdf');
-      }
-    }).catch(function (e) {
-      console.error(e); alert('Could not generate the file. Please try again.');
-    }).then(function () {
-      document.body.removeChild(node);
-      btn.textContent = label; btn.disabled = false;
-    });
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, imgH);
+        i++; next();
+      }).catch(function(e){ fail(e); done(); });
+    })();
   }
 
   function sync(){
@@ -222,6 +340,7 @@ RSPH_READY.then(function(){
         '<p>The approved scheme for ' + p.short + ' Semester ' + state.sem + ' is listed on the ' +
         '<a href="courses.html?p='+state.prog+'&s='+state.sem+'" style="color:var(--wine);text-decoration:underline">course catalogue</a>. ' +
         'Once the School issues the timetable it is added to <code>assets/data.js</code> and this page fills in automatically.</p></div>';
+      document.getElementById('range-bar').style.display = 'none';
       return;
     }
 
@@ -385,6 +504,9 @@ RSPH_READY.then(function(){
 
     /* every session in every view opens its detail card */
     TT.wireSessionClicks(document.getElementById('body'), tt);
+
+    document.getElementById('range-bar').style.display = '';
+    syncRangeUI();
 
   }
 

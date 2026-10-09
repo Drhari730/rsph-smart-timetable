@@ -26,6 +26,14 @@
   font-family:'Source Serif 4',Georgia,serif;font-size:13.5px;color:var(--ink);min-width:200px;outline:none;transition:.15s;}
 .ctrl-input:focus{border-color:var(--coral);box-shadow:0 0 0 4px rgba(222,68,33,.12);}
 .ctrl-actions{display:flex;gap:9px;flex-wrap:wrap;}
+/* date range the downloads cover */
+.range-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--surface-alt);
+  border:1px dashed var(--border);border-radius:16px;padding:14px 20px;margin:-10px 0 22px;}
+.range-bar .ctrl-input{min-width:0;width:160px;}
+.range-bar .seg{flex-wrap:wrap;border-radius:18px;}
+.range-sum{flex-basis:100%;margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+.range-sum strong{color:var(--indigo);}
+@media (max-width:640px){ .range-bar .ctrl-input{width:100%;} .range-bar .control-group{flex:1 1 140px;} }
 
 /* --- "right now" panel --------------------------------------------------- */
 .now-panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin:0 0 26px;}

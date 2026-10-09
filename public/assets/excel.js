@@ -23,8 +23,14 @@ function boxed(cell, edge) {
 function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
 function dmy(d) { return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
 
-/* opts: { weekStart: Date (Monday) — dates the grid and shows that week's
-   module in each course cell; omitted gives the plain recurring week } */
+const sameOrBefore = (a, b) => a.getTime() <= b.getTime();
+function inRange(d, from, to) { return (!from || sameOrBefore(from, d)) && (!to || sameOrBefore(d, to)); }
+const short = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+/* opts: { from, to: Date — a dated range: one grid sheet per week (only the
+           days inside the range) plus a day-by-day schedule list;
+           weekStart: Date — a single dated week;
+           none — the plain recurring week } */
 function downloadExcel(tt, opts) {
   opts = opts || {};
   if (!global.ExcelJS) { alert('The spreadsheet library did not load. Please refresh and try again.'); return Promise.resolve(); }
@@ -34,8 +40,84 @@ function downloadExcel(tt, opts) {
   wb.creator = 'RSPH Smart Timetable';
   wb.created = new Date();
 
-  /* ---------------- Sheet 1: the grid ---------------- */
-  const ws = wb.addWorksheet('Timetable', {
+  if (opts.from && opts.to) {
+    scheduleSheet(wb, tt, opts.from, opts.to);
+    let w = TT.mondayOfWeek(opts.from), n = 0;
+    while (sameOrBefore(w, opts.to) && n < 60) {
+      const e = addDays(w, 6);
+      gridSheet(wb, tt, 'Wk ' + short(w < opts.from ? opts.from : w) + ' - ' + short(e > opts.to ? opts.to : e), w, opts.from, opts.to);
+      w = addDays(w, 7); n++;
+    }
+  } else {
+    gridSheet(wb, tt, 'Timetable', opts.weekStart || null, null, null);
+  }
+
+  return finish(wb, tt, opts);
+}
+
+/* Day-by-day list of every session in the range — the easiest sheet to
+   filter, sort or paste into another system. */
+function scheduleSheet(wb, tt, from, to) {
+  const P = TT.plain, p = RSPH.programmes[tt.prog];
+  const ss = wb.addWorksheet('Schedule', { views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }],
+    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+  [14, 11, 15, 34, 10, 18, 34, 40].forEach((w, i) => { ss.getColumn(i + 1).width = w; });
+  ss.mergeCells(1, 1, 1, 8);
+  ss.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · ' + dmy(from) + ' to ' + dmy(to);
+  ss.getCell(1, 1).font = { name: 'Georgia', size: 14, bold: true, color: { argb: argb(WINE) } };
+  ss.mergeCells(2, 1, 2, 8);
+  ss.getCell(2, 1).value = 'Every scheduled session in the selected dates, with the module planned for that day. ' +
+    'One sheet per week follows in the same layout and colours as the website.';
+  ss.getCell(2, 1).font = { name: 'Georgia', size: 9, italic: true, color: { argb: argb(MUTE) } };
+  ['Date', 'Day', 'Time', 'Session', 'Code', 'Type', 'Faculty', 'Module planned'].forEach((h, i) => {
+    const c = ss.getCell(4, i + 1);
+    c.value = h; c.fill = fill(WINE);
+    c.font = { name: 'Georgia', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+    c.alignment = { vertical: 'middle' };
+  });
+  ss.getRow(4).height = 22;
+  ss.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: 8 } };
+
+  let r = 5, band = 0;
+  for (let d = new Date(from.getTime()); sameOrBefore(d, to); d = addDays(d, 1)) {
+    const day = RSPH.DAYS[(d.getDay() + 6) % 7];
+    const blocks = (tt.days[day] || []).slice().sort((a, b) => a.i - b.i);
+    if (!blocks.length) continue;
+    band++;
+    if (!TT.dateInTerm(tt, d)) {
+      [dmy(d), RSPH.DAY_FULL[day], '', 'Outside the semester dates'].forEach((v, i) => {
+        const c = ss.getCell(r, i + 1); c.value = v;
+        c.font = { name: 'Georgia', size: 9.5, italic: true, color: { argb: argb(MUTE) } };
+      });
+      r++; continue;
+    }
+    blocks.forEach(b => {
+      const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
+      const crs = b.c ? TT.course(tt.prog, b.c) : null;
+      const first = tt.slots[b.i], last = tt.slots[Math.min(b.i + b.n - 1, tt.slots.length - 1)];
+      const m = b.c && b.k !== 'field' ? TT.moduleForDate(tt, b.c, d) : null;
+      const vals = [dmy(d), RSPH.DAY_FULL[day],
+        TT.fmtHM(TT.toMin(first.s)) + '–' + TT.fmtHM(TT.toMin(last.e)), P(b.t), b.c || '', k.label,
+        P(b.f || (crs && crs.faculty) || ''), m ? 'Module ' + (m.moduleIndex + 1) + ': ' + P(m.module.title) : ''];
+      vals.forEach((v, i) => {
+        const c = ss.getCell(r, i + 1);
+        c.value = v;
+        c.fill = fill(i >= 3 ? k.bg : (band % 2 ? '#FFFFFF' : '#F7F3F8'));
+        c.font = { name: 'Georgia', size: 9.5, bold: i === 3, color: { argb: argb(i === 3 ? k.color : i === 7 ? CORAL : INK) } };
+        c.alignment = { vertical: 'top', wrapText: true };
+        c.border = { bottom: thin(GRID), left: i === 3 ? { style: 'thick', color: { argb: argb(k.color) } } : undefined };
+      });
+      r++;
+    });
+  }
+}
+
+/* One grid sheet. weekStart dates the rows; from/to (optional) drop the day
+   rows that fall outside the chosen range. */
+function gridSheet(wb, tt, sheetName, weekStart, from, to) {
+  const P = TT.plain, p = RSPH.programmes[tt.prog];
+  const opts = { weekStart: weekStart };
+  const ws = wb.addWorksheet(sheetName, {
     views: [{ showGridLines: false, state: 'frozen', xSplit: 1, ySplit: 5 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0,
                  margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } }
@@ -72,7 +154,8 @@ function downloadExcel(tt, opts) {
     c.border = { top: thin(WINE), bottom: thin(WINE), left: thin('#5A3A8A'), right: thin('#5A3A8A') };
   });
 
-  const days = RSPH.DAYS.filter(d => (tt.days[d] || []).length);
+  const days = RSPH.DAYS.filter(d => (tt.days[d] || []).length &&
+    (!weekStart || inRange(addDays(weekStart, RSPH.DAYS.indexOf(d)), from, to)));
   const lunchIdx = tt.slots.map((s, i) => s.lunch ? i : -1).filter(i => i >= 0);
   const crossesLunch = li => days.some(d => tt.days[d].some(b => b.i <= li && b.i + b.n - 1 >= li));
 
@@ -158,8 +241,13 @@ function downloadExcel(tt, opts) {
   }
   title(lr + 1, 'Source: ' + P(tt.source) + '. Generated by the RSPH Smart Timetable.',
         { name: 'Georgia', size: 8.5, color: { argb: argb(MUTE) } });
+}
 
-  /* ---------------- Sheet 2: day-wise teaching plan ---------------- */
+/* Teaching plan + weekly load sheets, then save. */
+function finish(wb, tt, opts) {
+  const P = TT.plain, p = RSPH.programmes[tt.prog];
+
+  /* ---------------- day-wise teaching plan ---------------- */
   const codes = [];
   RSPH.DAYS.forEach(d => (tt.days[d] || []).forEach(b => { if (b.c && codes.indexOf(b.c) < 0) codes.push(b.c); }));
   const planned = codes.filter(c => TT.courseModules(tt.prog, c).length);
@@ -237,7 +325,8 @@ function downloadExcel(tt, opts) {
     });
   });
 
-  const fname = 'RSPH-' + p.short + '-Sem' + tt.sem + (opts.weekStart ? '-week-' + TT.ymd(opts.weekStart) : '') + '.xlsx';
+  const fname = 'RSPH-' + p.short + '-Sem' + tt.sem + (opts.from && opts.to ? '-' + TT.ymd(opts.from) + '-to-' + TT.ymd(opts.to)
+    : opts.weekStart ? '-week-' + TT.ymd(opts.weekStart) : '') + '.xlsx';
   return wb.xlsx.writeBuffer().then(buf => {
     const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const a = document.createElement('a');
