@@ -148,10 +148,10 @@ const timetables = [
     "faculty": "Faculty of Life and Allied Health Sciences",
     "venue": "Classroom 1 / available classroom",
     "start": null,
-    "end": null,
+    "end": "2027-02-20",
     "source": "MPH Programme &ndash; Semester 1 Timetable (revised, Oct 2026) &middot; School of Public Health",
     "flags": [
-      "Start Date and End Date are not on record &mdash; the day-wise module plan assumes teaching from 1 September until a start date is entered.",
+      "Start date is not on record &mdash; the day-wise plan assumes teaching from 1 September 2026. The semester runs until 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
       "Wednesday 10:45 am &ndash; 12:00 pm Seminar slot given to Public Health Systems &amp; Health Policy so its 45 specified hours fit within the semester."
     ],
