@@ -366,9 +366,11 @@ RSPH_READY.then(function(){
     var meta =
       '<div class="tt-meta">' +
         cell('Venue', tt.venue, 'As printed on the issued timetable') +
-        cell('Term', (tt.start ? TT.fmtDate(TT.parseDate(tt.start)) : 'Not issued') +
-             (tt.end ? ' &ndash; ' + TT.fmtDate(TT.parseDate(tt.end)) : ''),
-             tw ? tw + ' teaching weeks' : 'End date not issued') +
+        cell('Term', (tt.start ? TT.fmtDate(TT.parseDate(tt.start)) : (tt.end ? 'Until' : 'Not issued')) +
+             (tt.end ? (tt.start ? ' &ndash; ' : ' ') + TT.fmtDate(TT.parseDate(tt.end)) : ''),
+             tw ? tw + ' teaching weeks'
+                : !tt.start && tt.end ? 'Start date not issued &mdash; plan assumes 1 Sep'
+                : !tt.end && tt.start ? 'End date not issued' : 'Dates not issued') +
         cell('Contact hours / week', TT.hrs(contact), nSess + ' scheduled sessions') +
         cell('Status', live === true ? 'In term' : (live === false ? 'Out of term' : 'Dates not issued'),
              live === true && wk ? 'Week ' + wk + (tw ? ' of ' + tw : '') : '&mdash;') +
