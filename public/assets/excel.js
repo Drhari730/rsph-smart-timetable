@@ -101,7 +101,7 @@ function scheduleSheet(wb, tt, from, to) {
       const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
       const crs = b.c ? TT.course(tt.prog, b.c) : null;
       const first = tt.slots[b.i], last = tt.slots[Math.min(b.i + b.n - 1, tt.slots.length - 1)];
-      const m = b.c && b.k !== 'field' ? TT.moduleForDate(tt, b.c, d) : null;
+      const m = b.c && b.k !== 'field' ? TT.moduleForDate(tt, b.c, d, b) : null;
       const vals = [dmy(d), RSPH.DAY_FULL[day],
         TT.fmtHM(TT.toMin(first.s)) + '–' + TT.fmtHM(TT.toMin(last.e)), P(b.t), b.c || '', k.label,
         P(b.f || (crs && crs.faculty) || ''), m ? P(TT.modLabel(m)) : '', m ? P(TT.topicText(m, '; ')) : ''];
@@ -196,7 +196,7 @@ function gridSheet(wb, tt, sheetName, weekStart, from, to) {
       const fac = b.f || (crs && crs.faculty);
       if (fac) rt.push({ text: '\n' + P(fac), font: { name: 'Georgia', size: 8.5, italic: true, color: { argb: argb(INK) } } });
       if (date && b.c && b.k !== 'field') {
-        const m = TT.moduleForDate(tt, b.c, date);
+        const m = TT.moduleForDate(tt, b.c, date, b);
         if (m) rt.push({ text: '\n' + P(TT.modLabel(m)),
                          font: { name: 'Georgia', size: 8.5, bold: true, color: { argb: argb(CORAL) } } });
         if (m && TT.topicText(m)) rt.push({ text: '\n▸ ' + P(TT.topicText(m, '; ')),

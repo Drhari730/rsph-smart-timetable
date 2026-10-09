@@ -25,7 +25,7 @@ function courseSessions(tt, code, from, to) {
     (tt.days[day] || []).filter(b => b.c === code).sort((a, b) => a.i - b.i).forEach(b => {
       if (!TT.dateInTerm(tt, d)) return;
       const first = tt.slots[b.i], last = tt.slots[Math.min(b.i + b.n - 1, tt.slots.length - 1)];
-      const m = b.k !== 'field' ? TT.moduleForDate(tt, code, d) : null;
+      const m = b.k !== 'field' ? TT.moduleForDate(tt, code, d, b) : null;
       out.push({ date: new Date(d.getTime()), day, b,
         time: TT.fmtHM(TT.toMin(first.s)) + '–' + TT.fmtHM(TT.toMin(last.e)), m });
     });

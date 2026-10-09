@@ -322,7 +322,7 @@ function dateInTerm(tt, d) {
    (or show) a module. */
 function moduleOnDate(tt, b, date) {
   if (!date || !b.c || b.k === 'field' || !dateInTerm(tt, date)) return null;
-  return moduleForDate(tt, b.c, date);
+  return moduleForDate(tt, b.c, date, b);
 }
 
 /* ctx = { day, bi, date } — bi is the block's index in tt.days[day], which is
@@ -569,7 +569,7 @@ function moduleSchedule(tt, code, maxWeeks) {
         if (date < realStart) continue;
         if (termEnd && date > termEnd) break outer;
         const dur = netMinutes(tt, occ.block) / 60;
-        out.push({ date, day: occ.day, module: mods[modIdx], moduleIndex: modIdx,
+        out.push({ date, day: occ.day, slot: occ.block.i, module: mods[modIdx], moduleIndex: modIdx,
                    topicIdx: topicsCovered(mods[modIdx], hoursUsed, dur) });
         hoursUsed += dur;
         if (hoursUsed >= mods[modIdx].hours) { modIdx++; hoursUsed = 0; }
@@ -620,9 +620,13 @@ function planStartOf(tt, code) {
   return tt.start ? parseDate(tt.start) : new Date(new Date().getFullYear(), 8, 1);
 }
 
-function moduleForDate(tt, code, date) {
+/* The plan entry for a course on a date; with `block`, the entry for that
+   exact session (a course can meet twice in one day). */
+function moduleForDate(tt, code, date, block) {
   const sched = moduleSchedule(tt, code);
-  for (let i = 0; i < sched.length; i++) { if (sameYMD(sched[i].date, date)) return sched[i]; }
+  for (let i = 0; i < sched.length; i++) {
+    if (sameYMD(sched[i].date, date) && (!block || sched[i].slot === block.i)) return sched[i];
+  }
   return null;
 }
 
@@ -685,10 +689,10 @@ function guideRow(icon, label, bodyHTML) {
 }
 const TOPIC_TAG_LABEL = { must: 'Must know', desirable: 'Desirable', nice: 'Nice to know' };
 
-function renderModuleDetail(tt, code, dateStr) {
+function renderModuleDetail(tt, code, dateStr, block) {
   const date = parseDate(dateStr);
   const c = course(tt.prog, code);
-  const entry = date ? moduleForDate(tt, code, date) : null;
+  const entry = date ? moduleForDate(tt, code, date, block) : null;
   if (!entry) return '<p style="font-size:13.5px;color:var(--ink-soft)">No module plan on record for this date.</p>';
   const m = entry.module, g = m.guide || {};
 
@@ -813,13 +817,13 @@ function sessionDetail(tt, day, bi, dateStr) {
     currentIdx = mod.moduleIndex;
     const sched = moduleSchedule(tt, b.c);
     const same = sched.filter(x => x.moduleIndex === mod.moduleIndex);
-    const pos = same.findIndex(x => sameYMD(x.date, date)) + 1;
+    const pos = same.findIndex(x => sameYMD(x.date, date) && x.slot === b.i) + 1;
     const total = courseModules(tt.prog, b.c).length;
     h += '<h3 class="sd-h">In this session</h3>' +
       '<p class="sd-sub">' + modShort(mod) + ' of ' + total + ' &middot; session ' + pos + ' of ' + same.length +
       ' for this ' + (isUnit(mod.module) ? 'unit' : 'module') + (pos === 1 ? ' &mdash; <strong>starts today</strong>' : '') +
       (pos === same.length ? ' &mdash; <strong>finishes today</strong>' : '') + '</p>' +
-      renderModuleDetail(tt, b.c, dateStr);
+      renderModuleDetail(tt, b.c, dateStr, b);
   } else if (b.k === 'field') {
     h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Field posting</span>Practical time attached to this ' +
       'course; it doesn&rsquo;t use up the classroom hours of its modules.</p>';
