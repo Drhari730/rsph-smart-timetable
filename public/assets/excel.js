@@ -61,22 +61,22 @@ function scheduleSheet(wb, tt, from, to) {
   const P = TT.plain, p = RSPH.programmes[tt.prog];
   const ss = wb.addWorksheet('Schedule', { views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-  [14, 11, 15, 34, 10, 18, 34, 40].forEach((w, i) => { ss.getColumn(i + 1).width = w; });
-  ss.mergeCells(1, 1, 1, 8);
+  [13, 11, 15, 30, 10, 16, 30, 30, 46].forEach((w, i) => { ss.getColumn(i + 1).width = w; });
+  ss.mergeCells(1, 1, 1, 9);
   ss.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · ' + dmy(from) + ' to ' + dmy(to);
   ss.getCell(1, 1).font = { name: 'Georgia', size: 14, bold: true, color: { argb: argb(WINE) } };
-  ss.mergeCells(2, 1, 2, 8);
+  ss.mergeCells(2, 1, 2, 9);
   ss.getCell(2, 1).value = 'Every scheduled session in the selected dates, with the module planned for that day. ' +
     'One sheet per week follows in the same layout and colours as the website.';
   ss.getCell(2, 1).font = { name: 'Georgia', size: 9, italic: true, color: { argb: argb(MUTE) } };
-  ['Date', 'Day', 'Time', 'Session', 'Code', 'Type', 'Faculty', 'Module planned'].forEach((h, i) => {
+  ['Date', 'Day', 'Time', 'Session', 'Code', 'Type', 'Faculty', 'Unit', 'Topic for the session'].forEach((h, i) => {
     const c = ss.getCell(4, i + 1);
     c.value = h; c.fill = fill(WINE);
     c.font = { name: 'Georgia', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
     c.alignment = { vertical: 'middle' };
   });
   ss.getRow(4).height = 22;
-  ss.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: 8 } };
+  ss.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: 9 } };
 
   let r = 5, band = 0;
   for (let d = new Date(from.getTime()); sameOrBefore(d, to); d = addDays(d, 1)) {
@@ -98,12 +98,12 @@ function scheduleSheet(wb, tt, from, to) {
       const m = b.c && b.k !== 'field' ? TT.moduleForDate(tt, b.c, d) : null;
       const vals = [dmy(d), RSPH.DAY_FULL[day],
         TT.fmtHM(TT.toMin(first.s)) + '–' + TT.fmtHM(TT.toMin(last.e)), P(b.t), b.c || '', k.label,
-        P(b.f || (crs && crs.faculty) || ''), m ? 'Module ' + (m.moduleIndex + 1) + ': ' + P(m.module.title) : ''];
+        P(b.f || (crs && crs.faculty) || ''), m ? P(TT.modLabel(m)) : '', m ? P(TT.topicText(m, '; ')) : ''];
       vals.forEach((v, i) => {
         const c = ss.getCell(r, i + 1);
         c.value = v;
         c.fill = fill(i >= 3 ? k.bg : (band % 2 ? '#FFFFFF' : '#F7F3F8'));
-        c.font = { name: 'Georgia', size: 9.5, bold: i === 3, color: { argb: argb(i === 3 ? k.color : i === 7 ? CORAL : INK) } };
+        c.font = { name: 'Georgia', size: 9.5, bold: i === 3, color: { argb: argb(i === 3 ? k.color : i >= 7 ? CORAL : INK) } };
         c.alignment = { vertical: 'top', wrapText: true };
         c.border = { bottom: thin(GRID), left: i === 3 ? { style: 'thick', color: { argb: argb(k.color) } } : undefined };
       });
@@ -162,7 +162,7 @@ function gridSheet(wb, tt, sheetName, weekStart, from, to) {
   days.forEach((day, r) => {
     const row = HR + 1 + r;
     const date = opts.weekStart ? addDays(opts.weekStart, RSPH.DAYS.indexOf(day)) : null;
-    ws.getRow(row).height = 78;
+    ws.getRow(row).height = weekStart ? 104 : 78;
     const dc = ws.getCell(row, 1);
     dc.value = { richText: [{ text: RSPH.DAY_FULL[day], font: { name: 'Georgia', size: 11, bold: true, color: { argb: argb(WINE) } } }]
       .concat(date ? [{ text: '\n' + dmy(date), font: { name: 'Georgia', size: 9, color: { argb: argb(MUTE) } } }] : []) };
@@ -191,8 +191,10 @@ function gridSheet(wb, tt, sheetName, weekStart, from, to) {
       if (fac) rt.push({ text: '\n' + P(fac), font: { name: 'Georgia', size: 8.5, italic: true, color: { argb: argb(INK) } } });
       if (date && b.c && b.k !== 'field') {
         const m = TT.moduleForDate(tt, b.c, date);
-        if (m) rt.push({ text: '\nModule ' + (m.moduleIndex + 1) + ': ' + P(m.module.title),
+        if (m) rt.push({ text: '\n' + P(TT.modLabel(m)),
                          font: { name: 'Georgia', size: 8.5, bold: true, color: { argb: argb(CORAL) } } });
+        if (m && TT.topicText(m)) rt.push({ text: '\n▸ ' + P(TT.topicText(m, '; ')),
+                         font: { name: 'Georgia', size: 8.5, italic: true, color: { argb: argb(INK) } } });
       }
       cell.value = { richText: rt };
       cell.fill = fill(k.bg);
@@ -254,51 +256,66 @@ function finish(wb, tt, opts) {
   if (planned.length) {
     const ps = wb.addWorksheet('Teaching plan', { views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }],
       pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-    [12, 30, 8, 34, 8, 9, 14, 14, 60].forEach((w, i) => { ps.getColumn(i + 1).width = w; });
-    ps.mergeCells(1, 1, 1, 9);
-    ps.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · Suggested day-wise teaching plan';
+    [11, 26, 8, 30, 46, 7, 9, 22, 54, 34].forEach((w, i) => { ps.getColumn(i + 1).width = w; });
+    ps.mergeCells(1, 1, 1, 10);
+    ps.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · Suggested teaching plan, unit by unit and topic by topic';
     ps.getCell(1, 1).font = { name: 'Georgia', size: 14, bold: true, color: { argb: argb(WINE) } };
-    ps.mergeCells(2, 1, 2, 9);
+    ps.mergeCells(2, 1, 2, 10);
     ps.getCell(2, 1).value = (tt.start ? 'Dates run from the term start, ' + dmy(TT.parseDate(tt.start)) :
       'Term start date not on record — dates assume teaching from 1 September') +
-      '. Each module takes the hours in the Course Specification, in order, across the course’s weekly slots.';
+      '. Units and hours follow the Course Specification; topics are taught in order across the course’s weekly slots.';
     ps.getCell(2, 1).font = { name: 'Georgia', size: 9, italic: true, color: { argb: argb(MUTE) } };
     ps.getCell(2, 1).alignment = { wrapText: true }; ps.getRow(2).height = 28;
 
-    const H = ['Code', 'Course', 'Credits', 'Module', 'Hours', 'Sessions', 'From', 'To', 'Objectives'];
+    const H = ['Code', 'Course', 'Credits', 'Unit', 'Topic', 'Hours', 'Sessions', 'Dates', 'Unit objectives', 'Teaching methods'];
     H.forEach((h, i) => {
       const c = ps.getCell(4, i + 1);
       c.value = h; c.fill = fill(WINE);
       c.font = { name: 'Georgia', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-      c.alignment = { vertical: 'middle', horizontal: i >= 2 && i <= 7 ? 'center' : 'left' };
+      c.alignment = { vertical: 'middle', horizontal: i === 2 || i === 5 || i === 6 ? 'center' : 'left' };
     });
     ps.getRow(4).height = 22;
 
+    const shortD = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     let r = 5;
     planned.forEach((code, ci) => {
       const crs = TT.course(tt.prog, code) || { title: code, credits: '' };
       const mods = TT.courseModules(tt.prog, code);
       const sched = TT.moduleSchedule(tt, code);
       const tint = ci % 2 ? '#FFFFFF' : '#F7F3F8';
-      const startRow = r;
+      const courseRow = r;
       mods.forEach((m, mi) => {
-        const occ = sched.filter(s => s.moduleIndex === mi);
-        const vals = [code, P(crs.title) + (crs.faculty ? '\n' + P(crs.faculty) : ''), crs.credits,
-          (mi + 1) + '. ' + P(m.title), m.hours, occ.length || '—',
-          occ.length ? dmy(occ[0].date) : 'Not reached', occ.length ? dmy(occ[occ.length - 1].date) : '',
-          (m.objectives || []).map(o => '• ' + P(o)).join('\n')];
-        vals.forEach((v, i) => {
-          const c = ps.getCell(r, i + 1);
-          c.value = v; c.fill = fill(tint);
-          c.font = { name: 'Georgia', size: 9.5, bold: i === 0 || i === 3, color: { argb: argb(i === 0 ? WINE : INK) } };
-          c.alignment = { vertical: 'top', wrapText: true, horizontal: i >= 2 && i <= 7 ? 'center' : 'left' };
-          c.border = { bottom: thin(GRID), left: i === 0 ? { style: 'thick', color: { argb: argb(WINE) } } : undefined };
+        const unitRow = r;
+        const hasTopics = m.topics && m.topics.length;
+        const topics = hasTopics ? m.topics : [{ text: m.title, hours: m.hours }];
+        topics.forEach((t, ti) => {
+          const occ = sched.filter(x => x.moduleIndex === mi && (!hasTopics || (x.topicIdx || []).indexOf(ti) >= 0));
+          const dates = occ.length
+            ? occ.map(x => shortD(x.date)).filter((v, j, a) => a.indexOf(v) === j).join(', ')
+            : 'Not reached in term';
+          const vals = [code, P(crs.title) + (crs.faculty ? '\n' + P(crs.faculty) : ''), crs.credits,
+            P(m.title) + '\n(' + m.hours + ' h)', P(t.text || t), t.hours || '', occ.length || '—', dates,
+            (m.objectives || []).map(o => '• ' + P(o.text || o)).join('\n'),
+            P((m.guide && m.guide.methods) || '')];
+          vals.forEach((v, i) => {
+            const c = ps.getCell(r, i + 1);
+            c.value = v; c.fill = fill(tint);
+            c.font = { name: 'Georgia', size: 9.5, bold: i === 0 || i === 3,
+                       color: { argb: argb(i === 0 || i === 3 ? WINE : i === 7 && !occ.length ? MUTE : INK) } };
+            c.alignment = { vertical: 'top', wrapText: true, horizontal: i === 2 || i === 5 || i === 6 ? 'center' : 'left' };
+            c.border = { bottom: thin(GRID), left: i === 0 ? { style: 'thick', color: { argb: argb(WINE) } } : undefined };
+          });
+          const lines = Math.max(2, Math.ceil(P(t.text || t).length / 44), Math.ceil(dates.length / 20));
+          ps.getRow(r).height = Math.min(120, 14 * lines + 6);
+          r++;
         });
-        const lines = Math.max(2, (m.objectives || []).length, Math.ceil(P(m.title).length / 32));
-        ps.getRow(r).height = Math.min(160, 14 * lines + 6);
-        r++;
+        // unit objectives can be longer than its topic rows: give the last row the slack
+        const objLines = (m.objectives || []).reduce((a, o) => a + Math.ceil(P(o.text || o).length / 50), 0);
+        let have = 0; for (let rr = unitRow; rr < r; rr++) have += ps.getRow(rr).height;
+        if (objLines * 13 + 8 > have) ps.getRow(r - 1).height += objLines * 13 + 8 - have;
+        if (r - 1 > unitRow) [4, 9, 10].forEach(col => ps.mergeCells(unitRow, col, r - 1, col));
       });
-      if (r - 1 > startRow) [1, 2, 3].forEach(col => ps.mergeCells(startRow, col, r - 1, col));
+      if (r - 1 > courseRow) [1, 2, 3].forEach(col => ps.mergeCells(courseRow, col, r - 1, col));
     });
   }
 

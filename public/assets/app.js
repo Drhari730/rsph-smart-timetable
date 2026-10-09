@@ -338,7 +338,8 @@ function cellHTML(tt, b, opts, ctx) {
     (ctx.date ? ' data-date="' + ymd(ctx.date) + '"' : '') + ' tabindex="0" role="button">' +
       (b.c ? '<span class="tt-code">' + b.c + '</span>' : '') +
       '<span class="tt-title">' + b.t + '</span>' +
-      (mod ? '<span class="tt-module">&#128214; ' + mod.module.title + '</span>' : '') +
+      (mod ? '<span class="tt-module">&#128214; ' + modLabel(mod) + '</span>' +
+             (topicText(mod) ? '<span class="tt-topic">&#9656; ' + topicText(mod) + '</span>' : '') : '') +
       (b.f ? '<span class="tt-fac">' + b.f + '</span>' : '') +
     '</div>';
 }
@@ -458,7 +459,8 @@ function renderAgenda(tt, opts) {
           '<span class="agenda-body">' +
             (s.code ? '<span class="tt-code">' + s.code + '</span>' : '') +
             '<strong>' + s.title + '</strong>' +
-            (mod ? '<span class="tt-module">&#128214; Module ' + (mod.moduleIndex + 1) + ': ' + mod.module.title + '</span>' : '') +
+            (mod ? '<span class="tt-module">&#128214; ' + modLabel(mod) + '</span>' +
+                   (topicText(mod) ? '<span class="tt-topic">&#9656; ' + topicText(mod) + '</span>' : '') : '') +
             (s.faculty ? '<span class="tt-fac">' + s.faculty + '</span>' : '') +
             '<span class="agenda-meta">' + k.label + ' &middot; ' + s.venue + '</span>' +
           '</span><span class="agenda-open">Details &rsaquo;</span></div>';
@@ -556,14 +558,47 @@ function moduleSchedule(tt, code, maxWeeks) {
         const date = new Date(weekStart0.getFullYear(), weekStart0.getMonth(), weekStart0.getDate() + week * 7 + idx);
         if (date < realStart) continue;
         if (termEnd && date > termEnd) break outer;
-        out.push({ date, day: occ.day, module: mods[modIdx], moduleIndex: modIdx });
-        hoursUsed += netMinutes(tt, occ.block) / 60;
+        const dur = netMinutes(tt, occ.block) / 60;
+        out.push({ date, day: occ.day, module: mods[modIdx], moduleIndex: modIdx,
+                   topicIdx: topicsCovered(mods[modIdx], hoursUsed, dur) });
+        hoursUsed += dur;
         if (hoursUsed >= mods[modIdx].hours) { modIdx++; hoursUsed = 0; }
       }
     }
   }
   _moduleScheduleCache[cacheKey] = out;
   return out;
+}
+
+/* Which of a module's topics a session covers: topics take their own
+   `hours` when given (otherwise the module's hours split evenly) and are
+   taught in order, so a session from hour `from` for `dur` hours covers
+   every topic whose span overlaps that window. */
+function topicsCovered(m, from, dur) {
+  const ts = m.topics || [];
+  if (!ts.length) return [];
+  const even = (m.hours || 0) / ts.length;
+  const out = [];
+  let start = 0;
+  ts.forEach((t, i) => {
+    const end = start + (t.hours > 0 ? +t.hours : even);
+    if (end > from + 1e-6 && start < from + dur - 1e-6) out.push(i);
+    start = end;
+  });
+  return out.length ? out : [ts.length - 1];
+}
+/* "Unit 2: ..." titles already say what they are; older plans get "Module N: " */
+const isUnit = m => /^unit\b/i.test(m.title);
+function modLabel(e) {
+  return isUnit(e.module) ? e.module.title : 'Module ' + (e.moduleIndex + 1) + ': ' + e.module.title;
+}
+function modShort(e) {
+  const m = e.module.title.match(/^unit\s*\d+/i);
+  return m ? m[0] : 'Module ' + (e.moduleIndex + 1);
+}
+function topicText(e, sep) {
+  const ts = e.module.topics || [];
+  return (e.topicIdx || []).map(i => ts[i] && ts[i].text).filter(Boolean).join(sep || ' · ');
 }
 
 function moduleForDate(tt, code, date) {
@@ -611,7 +646,7 @@ function renderMonthCalendar(tt, year, month) {
         return '<div class="cal-chip tt-click' + (mod ? ' has-module' : '') + '" style="--k:' + k.color + ';--kbg:' + k.bg + '"' +
           ' data-day="' + dayKey + '" data-bi="' + x.bi + '" data-date="' + ymd(c.date) + '" tabindex="0" role="button">' +
           (slot ? '<span class="cal-chip-time">' + fmtHM(toMin(slot.s)) + '</span> ' : '') + b.t +
-          (mod ? '<span class="cal-chip-module">&#128214; ' + mod.module.title + '</span>' : '') +
+          (mod ? '<span class="cal-chip-module">&#128214; ' + modShort(mod) + ': ' + (topicText(mod) || mod.module.title) + '</span>' : '') +
         '</div>';
       }).join('') + '</div>' +
       (inTerm ? '' : '<span class="cal-out-tag">Not in term</span>') +
@@ -640,15 +675,16 @@ function renderModuleDetail(tt, code, dateStr) {
 
   let h = '<div class="module-sheet"><div class="module-sheet-head">' +
     '<span class="modnum">' + (entry.moduleIndex + 1) + '</span><h3>' + m.title + '</h3></div>' +
+    (topicText(entry) ? '<div class="topic-banner">&#9656; Topic for this session: <strong>' + topicText(entry, '; ') + '</strong></div>' : '') +
     '<div style="padding:13px 20px;background:var(--surface-alt);border-bottom:1px solid var(--border);' +
     'font-size:12.5px;color:var(--ink-soft)">' +
       fmtDate(date) + ' &middot; ' + (c ? c.title : code) + ' <span style="color:var(--wine);font-weight:700">' + code + '</span>' +
-      ' &middot; ~' + m.hours + ' classroom hours for this module' +
+      ' &middot; ~' + m.hours + ' hours for this ' + (isUnit(m) ? 'unit' : 'module') +
     '</div>';
 
   if (m.objectives && m.objectives.length) {
     h += '<div class="mod-objectives" style="padding:16px 20px 14px"><span class="mod-objectives-lbl">' +
-      '&#127919; Module objectives &mdash; by the end of this module, the student will be able to:</span><ol>' +
+      '&#127919; Objectives &mdash; by the end of this ' + (isUnit(m) ? 'unit' : 'module') + ', the student will be able to:</span><ol>' +
       m.objectives.map(o => '<li><span class="obj-text">' + o.text + '</span>' +
         (o.bloom ? '<span class="bloom-chip">' + o.bloom + '</span>' : '') +
         (o.co ? '<span class="co-chip">' + o.co + '</span>' : '') + '</li>').join('') +
@@ -657,13 +693,16 @@ function renderModuleDetail(tt, code, dateStr) {
   if (m.topics && m.topics.length) {
     h += '<ul style="padding:14px 24px 16px;list-style:none;display:flex;flex-direction:column;gap:8px;' +
       'background:var(--surface);border-top:1px dashed var(--border)">' +
-      m.topics.map(t => '<li style="font-size:13.5px;color:var(--ink);position:relative;padding-left:16px">' +
+      m.topics.map((t, ti) => '<li class="' + ((entry.topicIdx || []).indexOf(ti) >= 0 ? 'topic-today' : '') + '" style="font-size:13.5px;color:var(--ink);position:relative;padding-left:16px">' +
         '<span style="position:absolute;left:0;color:var(--wine)">&bull;</span>' + t.text +
+        (t.hours ? ' <span class="topic-hrs">' + t.hours + ' h</span>' : '') +
+        ((entry.topicIdx || []).indexOf(ti) >= 0 ? ' <span class="pill warn">today</span>' : '') +
         '<span class="topic-tag ' + t.priority + '">' + (TOPIC_TAG_LABEL[t.priority] || t.priority) + '</span></li>').join('') +
     '</ul>';
   }
-  if (g.notesFocus || g.videoIdea || g.readingIdea || g.exercise || (g.pptOutline && g.pptOutline.length)) {
+  if (g.methods || g.notesFocus || g.videoIdea || g.readingIdea || g.exercise || (g.pptOutline && g.pptOutline.length)) {
     h += '<div class="lecture-guide" style="padding:16px 22px 20px">';
+    if (g.methods) h += guideRow('&#127891;', 'Teaching Methods', '<p>' + g.methods + '</p>');
     if (g.notesFocus) h += guideRow('&#128221;', 'Lecture Notes Focus', '<p>' + g.notesFocus + '</p>');
     if (g.pptOutline && g.pptOutline.length) h += guideRow('&#128421;&#65039;', 'Suggested PPT Outline', '<ol>' + g.pptOutline.map(x => '<li>' + x + '</li>').join('') + '</ol>');
     if (g.videoIdea) h += guideRow('&#127909;', 'Video Idea', '<p>' + g.videoIdea + '</p>');
@@ -703,10 +742,10 @@ function teachingPlanTable(tt, code, currentIdx) {
       '<td class="num">' + m.hours + ' h</td><td class="num">' + sess.length + '</td><td>' + when + '</td></tr>';
   }).join('');
   return '<h3 class="sd-h">Teaching plan for the course</h3>' +
-    '<p class="sd-sub">Modules in the order of the approved Course Specification, each given its approved classroom hours ' +
+    '<p class="sd-sub">Units in the order of the approved Course Specification, each given its approved hours ' +
     'and laid over this subject&rsquo;s real weekly slots' + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
     'no start date is on record for this timetable' : '') + '.</p>' +
-    '<table class="data-table"><thead><tr><th class="num">#</th><th>Module</th><th class="num">Hours</th>' +
+    '<table class="data-table"><thead><tr><th class="num">#</th><th>Unit / module</th><th class="num">Hours</th>' +
     '<th class="num">Sessions</th><th>Dates</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
@@ -756,9 +795,9 @@ function sessionDetail(tt, day, bi, dateStr) {
     const pos = same.findIndex(x => sameYMD(x.date, date)) + 1;
     const total = courseModules(tt.prog, b.c).length;
     h += '<h3 class="sd-h">In this session</h3>' +
-      '<p class="sd-sub">Module ' + (mod.moduleIndex + 1) + ' of ' + total + ' &middot; session ' + pos + ' of ' + same.length +
-      ' for this module' + (pos === 1 ? ' &mdash; <strong>module starts today</strong>' : '') +
-      (pos === same.length ? ' &mdash; <strong>module finishes today</strong>' : '') + '</p>' +
+      '<p class="sd-sub">' + modShort(mod) + ' of ' + total + ' &middot; session ' + pos + ' of ' + same.length +
+      ' for this ' + (isUnit(mod.module) ? 'unit' : 'module') + (pos === 1 ? ' &mdash; <strong>starts today</strong>' : '') +
+      (pos === same.length ? ' &mdash; <strong>finishes today</strong>' : '') + '</p>' +
       renderModuleDetail(tt, b.c, dateStr);
   } else if (b.k === 'field') {
     h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Field posting</span>Practical time attached to this ' +
@@ -914,7 +953,7 @@ global.TT = {
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
-  courseModules, moduleSchedule, moduleForDate, renderModuleDetail,
+  courseModules, moduleSchedule, moduleForDate, renderModuleDetail, modLabel, modShort, topicText,
   sessionDetail, openModal, closeModal, wireSessionClicks, mondayOfWeek, ymd, dateInTerm,
   mountChrome, reveal, countUp
 };

@@ -285,3 +285,10 @@ body.modal-open{overflow:hidden;}
   .tt-notes{display:none;}
   @page{size:A4 landscape;margin:12mm;}
 }
+
+/* topic taught in a session (from the unit's topic plan) */
+.tt-topic{display:block;font-size:11px;color:var(--ink);line-height:1.4;margin-top:2px;font-style:italic;}
+.topic-hrs{font-size:11px;color:var(--ink-soft);margin-left:4px;}
+li.topic-today{font-weight:700;background:var(--surface-alt);border-radius:8px;padding:4px 8px 4px 16px !important;}
+.topic-banner{padding:10px 20px;background:#FBEAE7;color:var(--ink);font-size:13.5px;border-bottom:1px solid var(--border);}
+.topic-banner strong{color:var(--wine);}

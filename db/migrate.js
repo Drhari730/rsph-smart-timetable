@@ -3,7 +3,12 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const pool = require('./pool');
 const seed = require('./seed-data');
-const courseModulesSeed = require('./course-modules-seed');
+const spec2026Sem1 = require('./spec-2026-sem1');
+// MPH Sem 1 plans come from the 2026 Course Specifications file, not the
+// older module seed
+const courseModulesSeed = require('./course-modules-seed')
+  .filter(m => !(m.prog === 'mph' && spec2026Sem1.courses[m.code]))
+  .concat(spec2026Sem1.modules);
 const courseInfoSeed = require('./course-info-seed');
 
 /* Runs on every boot. Creates tables if missing (cheap, idempotent), then
@@ -28,6 +33,7 @@ async function migrate() {
   // exactly as it is).
   await seedMissingCourseModules();
   await backfillCourseInfo();
+  await applySpec2026Sem1();
 
   await syncAdminUser();
   console.log('[migrate] ready.');
@@ -126,6 +132,44 @@ async function backfillCourseInfo() {
     n += r.rowCount;
   }
   if (n) console.log('[migrate] backfilled aim/outcomes for', n, 'course(s)');
+}
+
+/* One-time switch of MPH Semester 1 to the revised 2026 Course
+   Specifications: unit-and-topic plans replace the old module plans, and
+   credits / aim / outcomes are updated. Recorded in site_settings so it
+   never runs again and later admin edits stay as they are. */
+async function applySpec2026Sem1() {
+  const KEY = 'spec2026_sem1';
+  const done = await pool.query('SELECT 1 FROM site_settings WHERE key = $1', [KEY]);
+  if (done.rowCount) return;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const code of Object.keys(spec2026Sem1.courses)) {
+      const c = spec2026Sem1.courses[code];
+      await client.query(
+        `UPDATE courses SET credits = $1, aim = $2, outcomes = $3 WHERE prog = 'mph' AND code = $4`,
+        [c.credits, c.aim, JSON.stringify(c.outcomes), code]
+      );
+      await client.query(`DELETE FROM course_modules WHERE prog = 'mph' AND code = $1`, [code]);
+    }
+    for (const m of spec2026Sem1.modules) {
+      await client.query(
+        `INSERT INTO course_modules (prog, code, seq, title, hours, objectives, topics, guide)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [m.prog, m.code, m.seq, m.title, m.hours, JSON.stringify(m.objectives),
+         JSON.stringify(m.topics), JSON.stringify(m.guide)]
+      );
+    }
+    await client.query('INSERT INTO site_settings (key, value) VALUES ($1, $2)',
+      [KEY, JSON.stringify({ appliedAt: new Date().toISOString() })]);
+    await client.query('COMMIT');
+    console.log('[migrate] applied 2026 Course Specifications to MPH Semester 1');
+  } catch (e) {
+    await client.query('ROLLBACK'); throw e;
+  } finally {
+    client.release();
+  }
 }
 
 async function syncAdminUser() {
