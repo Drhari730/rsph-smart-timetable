@@ -37,6 +37,9 @@ ALTER TABLE courses ADD COLUMN IF NOT EXISTS outcomes JSONB;
 -- Date the course's day-wise teaching plan starts, when it isn't the
 -- timetable's own start date (e.g. a course that begins later in the term).
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS plan_start DATE;
+-- Date the plan must be finished by; units are compressed to fit when the
+-- specified hours would run past it.
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS plan_end DATE;
 
 CREATE TABLE IF NOT EXISTS electives (
   id         SERIAL PRIMARY KEY,

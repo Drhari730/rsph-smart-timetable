@@ -40,11 +40,11 @@ const kinds = {
 };
 
 const courses = [
-  { prog:'mph', sem:1, code:'PHC501A', title:'Principles and Practice of Public Health', credits:4, type:'core', notes:'phc501a.html', faculty:'Dr. Tejaswini B. D' },
-  { prog:'mph', sem:1, code:'PHC502A', title:'Public Health Systems &amp; Health Policy', credits:4, type:'core', notes:'phc502a.html', faculty:'Dr. G Hari Prakash' },
-  { prog:'mph', sem:1, code:'PHC503A', title:'Epidemiology', credits:4, type:'core', notes:'phc503a.html', faculty:'Dr. Tejaswini B. D / Community Medicine faculty' },
-  { prog:'mph', sem:1, code:'PHC504B', title:'Healthcare Management and Leadership', credits:2, type:'core', notes:'phc504b.html', faculty:'Dr. G Hari Prakash' },
-  { prog:'mph', sem:1, code:'PHC505A', title:'Biostatistics', credits:4, type:'core', notes:'phc505a.html', faculty:'Dr. G Hari Prakash / Community Medicine faculty' },
+  { prog:'mph', sem:1, code:'PHC501A', title:'Principles and Practice of Public Health', credits:4, type:'core', notes:'phc501a.html', faculty:'Dr. Tejaswini B. D', planEnd:'2027-02-05' },
+  { prog:'mph', sem:1, code:'PHC502A', title:'Public Health Systems &amp; Health Policy', credits:4, type:'core', notes:'phc502a.html', faculty:'Dr. G Hari Prakash', planEnd:'2027-02-05' },
+  { prog:'mph', sem:1, code:'PHC503A', title:'Epidemiology', credits:4, type:'core', notes:'phc503a.html', faculty:'Dr. Tejaswini B. D / Community Medicine faculty', planEnd:'2027-02-05' },
+  { prog:'mph', sem:1, code:'PHC504B', title:'Healthcare Management and Leadership', credits:2, type:'core', notes:'phc504b.html', faculty:'Dr. G Hari Prakash', planEnd:'2027-02-05' },
+  { prog:'mph', sem:1, code:'PHC505A', title:'Biostatistics', credits:4, type:'core', notes:'phc505a.html', faculty:'Dr. G Hari Prakash / Community Medicine faculty', planEnd:'2027-02-05' },
   { prog:'mph', sem:1, code:'PHO501A', title:'Open / Generic Elective &ndash; 1 (O/GEC-1)', credits:2, type:'ogec' },
 
   { prog:'mph', sem:2, code:'PHC506A', title:'Public Health Priorities in India &mdash; I (Communicable Diseases)', credits:4, type:'core', notes:'phc506a.html' },

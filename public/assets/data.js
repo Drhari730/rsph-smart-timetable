@@ -39,7 +39,7 @@ const RSPH_READY = fetch('/api/bootstrap', { credentials: 'same-origin' })
                credits: Number(c.credits), type: c.type, notes: c.notes || undefined,
                faculty: c.faculty || undefined,
                aim: c.aim || undefined, outcomes: c.outcomes || [],
-               planStart: c.plan_start || null };
+               planStart: c.plan_start || null, planEnd: c.plan_end || null };
     });
 
     // timetables: DB rows carry slots/days as JSON already in the shape app.js expects

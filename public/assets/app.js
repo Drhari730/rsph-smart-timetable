@@ -554,30 +554,58 @@ function moduleSchedule(tt, code, maxWeeks) {
   if (mods.length && occurrences.length) {
     occurrences.sort((a, b) => RSPH.DAYS.indexOf(a.day) - RSPH.DAYS.indexOf(b.day) || a.block.i - b.block.i);
 
-    const now = new Date();
     const realStart = planStartOf(tt, code);
+    const endBy = planEndOf(tt, code);
     const termEnd = tt.end ? parseDate(tt.end) : null;
+    const limit = endBy && (!termEnd || endBy < termEnd) ? endBy : termEnd;
     const weekStart0 = mondayOfWeek(realStart);
 
-    let modIdx = 0, hoursUsed = 0;
-    outer:
-    for (let week = 0; week < maxWeeks; week++) {
-      for (const occ of occurrences) {
-        if (modIdx >= mods.length) break outer;
-        const idx = RSPH.DAYS.indexOf(occ.day);
-        const date = new Date(weekStart0.getFullYear(), weekStart0.getMonth(), weekStart0.getDate() + week * 7 + idx);
-        if (date < realStart) continue;
-        if (termEnd && date > termEnd) break outer;
-        const dur = netMinutes(tt, occ.block) / 60;
-        out.push({ date, day: occ.day, slot: occ.block.i, module: mods[modIdx], moduleIndex: modIdx,
-                   topicIdx: topicsCovered(mods[modIdx], hoursUsed, dur) });
-        hoursUsed += dur;
-        if (hoursUsed >= mods[modIdx].hours) { modIdx++; hoursUsed = 0; }
+    // Lays the plan over the weekly slots with every unit's and topic's
+    // hours multiplied by `f`; reports whether the whole plan fits by `limit`.
+    const walk = f => {
+      const res = [];
+      let modIdx = 0, hoursUsed = 0;
+      outer:
+      for (let week = 0; week < maxWeeks; week++) {
+        for (const occ of occurrences) {
+          if (modIdx >= mods.length) break outer;
+          const idx = RSPH.DAYS.indexOf(occ.day);
+          const date = new Date(weekStart0.getFullYear(), weekStart0.getMonth(), weekStart0.getDate() + week * 7 + idx);
+          if (date < realStart) continue;
+          if (limit && date > limit) break outer;
+          const dur = netMinutes(tt, occ.block) / 60;
+          res.push({ date, day: occ.day, slot: occ.block.i, module: mods[modIdx], moduleIndex: modIdx,
+                     topicIdx: topicsCovered(mods[modIdx], hoursUsed / f, dur / f) });
+          hoursUsed += dur;
+          if (hoursUsed >= mods[modIdx].hours * f - 1e-6) { modIdx++; hoursUsed = 0; }
+        }
       }
+      res.done = modIdx >= mods.length;
+      return res;
+    };
+
+    out = walk(1);
+    out.scale = 1;
+    // A course with a "finish by" date that its specified hours can't meet
+    // is compressed: the largest factor at which every unit still fits.
+    if (endBy && !out.done) {
+      let lo = 0, hi = 1, best = null;
+      for (let k = 0; k < 30; k++) {
+        const mid = (lo + hi) / 2, r = walk(mid);
+        if (r.done) { lo = mid; best = r; } else hi = mid;
+      }
+      if (best) { out = best; out.scale = lo; }
     }
+    out.endBy = endBy;
   }
   _moduleScheduleCache[cacheKey] = out;
   return out;
+}
+
+/* The date a course's plan must be finished by, when one is set. */
+function planEndOf(tt, code) {
+  const c = course(tt.prog, code);
+  return c && c.planEnd ? parseDate(c.planEnd) : null;
 }
 
 /* Which of a module's topics a session covers: topics take their own
@@ -768,7 +796,10 @@ function teachingPlanTable(tt, code, currentIdx) {
   return '<h3 class="sd-h">Teaching plan for the course</h3>' +
     '<p class="sd-sub">Units in the order of the approved Course Specification, each given its approved hours ' +
     'and laid over this subject&rsquo;s real weekly slots' +
-    (ownStart ? ', starting ' + fmtDate(parseDate(ownStart)) : '') + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
+    (ownStart ? ', starting ' + fmtDate(parseDate(ownStart)) : '') +
+    (sched.endBy ? ', to finish by ' + fmtDate(sched.endBy) +
+      (sched.scale < 1 ? ' &mdash; <strong>compressed to fit</strong>: each unit gets about ' + Math.round(sched.scale * 100) +
+        '% of its specified hours' : '') : '') + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
     'no start date is on record for this timetable' : '') + '.</p>' +
     '<table class="data-table"><thead><tr><th class="num">#</th><th>Unit / module</th><th class="num">Hours</th>' +
     '<th class="num">Sessions</th><th>Dates</th></tr></thead><tbody>' + rows + '</tbody></table>';
@@ -837,8 +868,8 @@ function sessionDetail(tt, day, bi, dateStr) {
     h += '<p class="note" style="margin-top:14px"><span class="note-lbl">No module plan yet</span>This subject has no ' +
       'day-wise module plan on record, so the session can&rsquo;t be tied to a module. It can be added under Admin &rarr; Module Plans.</p>';
   } else if (date) {
-    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Syllabus already covered</span>Every module&rsquo;s ' +
-      'approved hours have been used by this date &mdash; this session is free for revision, assessment or catch-up.</p>';
+    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Syllabus already covered</span>Every unit of the plan has been taught by this date ' +
+      '&mdash; this session is free for revision, assessment or catch-up.</p>';
   }
 
   h += teachingPlanTable(tt, b.c, currentIdx);
@@ -981,7 +1012,7 @@ global.TT = {
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
-  courseModules, moduleSchedule, moduleForDate, planStartOf, filterTT, renderModuleDetail, modLabel, modShort, topicText,
+  courseModules, moduleSchedule, moduleForDate, planStartOf, planEndOf, filterTT, renderModuleDetail, modLabel, modShort, topicText,
   sessionDetail, openModal, closeModal, wireSessionClicks, mondayOfWeek, ymd, dateInTerm,
   mountChrome, reveal, countUp
 };

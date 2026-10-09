@@ -14,7 +14,7 @@ router.get('/bootstrap', async (req, res) => {
   try {
     const [settings, courses, electivesRows, timetables, moduleRows] = await Promise.all([
       pool.query('SELECT key, value FROM site_settings'),
-      pool.query('SELECT id, prog, sem, code, title, credits, type, notes, faculty, aim, outcomes, plan_start FROM courses ORDER BY prog, sem, sort_order, code'),
+      pool.query('SELECT id, prog, sem, code, title, credits, type, notes, faculty, aim, outcomes, plan_start, plan_end FROM courses ORDER BY prog, sem, sort_order, code'),
       pool.query('SELECT prog, code, title FROM electives ORDER BY prog, sort_order, code'),
       pool.query(`SELECT id, prog, sem, batch, ay, faculty, venue,
                          to_char(start_date,'YYYY-MM-DD') AS start,
@@ -121,10 +121,10 @@ router.post('/admin/courses', requireAdmin, async (req, res) => {
   if (!c.prog || !c.sem || !c.code || !c.title) return res.status(400).json({ error: 'prog, sem, code and title are required.' });
   try {
     const { rows } = await pool.query(
-      `INSERT INTO courses (prog, sem, code, title, credits, type, notes, faculty, plan_start, sort_order)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, COALESCE((SELECT max(sort_order)+1 FROM courses WHERE prog=$1),0))
+      `INSERT INTO courses (prog, sem, code, title, credits, type, notes, faculty, plan_start, plan_end, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, COALESCE((SELECT max(sort_order)+1 FROM courses WHERE prog=$1),0))
        RETURNING *`,
-      [c.prog, c.sem, c.code, c.title, c.credits || 0, c.type || 'core', c.notes || null, c.faculty || null, c.plan_start || null]
+      [c.prog, c.sem, c.code, c.title, c.credits || 0, c.type || 'core', c.notes || null, c.faculty || null, c.plan_start || null, c.plan_end || null]
     );
     res.status(201).json(rows[0]);
   } catch (e) {
@@ -137,10 +137,10 @@ router.put('/admin/courses/:id', requireAdmin, async (req, res) => {
   const c = req.body || {};
   try {
     const { rows } = await pool.query(
-      `UPDATE courses SET prog=$1, sem=$2, code=$3, title=$4, credits=$5, type=$6, notes=$7, faculty=$8, plan_start=$9
-       WHERE id=$10 RETURNING *`,
+      `UPDATE courses SET prog=$1, sem=$2, code=$3, title=$4, credits=$5, type=$6, notes=$7, faculty=$8, plan_start=$9, plan_end=$10
+       WHERE id=$11 RETURNING *`,
       [c.prog, c.sem, c.code, c.title, c.credits || 0, c.type || 'core', c.notes || null, c.faculty || null,
-       c.plan_start || null, req.params.id]
+       c.plan_start || null, c.plan_end || null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Course not found.' });
     res.json(rows[0]);

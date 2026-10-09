@@ -25,6 +25,16 @@ function onlyLabel(tt) {
   if (!tt.onlyCodes) return '';
   return ' · ' + tt.onlyCodes.map(c => { const x = TT.course(tt.prog, c); return x ? TT.plain(x.title) : c; }).join(', ');
 }
+/* " Compressed to finish by 5 Feb 2027: Epidemiology 80%, ..." for courses squeezed to a finish date */
+function compressNote(tt) {
+  const codes = [];
+  RSPH.DAYS.forEach(d => (tt.days[d] || []).forEach(b => { if (b.c && codes.indexOf(b.c) < 0) codes.push(b.c); }));
+  const hit = codes.map(c => ({ c, s: TT.moduleSchedule(tt, c) })).filter(x => x.s.endBy);
+  if (!hit.length) return '';
+  return ' Plans finish by ' + dmy(hit[0].s.endBy) + '; to fit, units get ' +
+    hit.map(x => TT.plain((TT.course(tt.prog, x.c) || { title: x.c }).title) + ' ' + Math.round((x.s.scale || 1) * 100) + '%').join(', ') +
+    ' of their specified hours.';
+}
 function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
 function dmy(d) { return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
 
@@ -269,7 +279,8 @@ function finish(wb, tt, opts) {
     ps.mergeCells(2, 1, 2, 10);
     ps.getCell(2, 1).value = (tt.start ? 'Dates run from the term start, ' + dmy(TT.parseDate(tt.start)) :
       'Term start date not on record — dates assume teaching from 1 September') +
-      '. Units and hours follow the Course Specification; topics are taught in order across the course’s weekly slots.';
+      '. Units and hours follow the Course Specification; topics are taught in order across the course’s weekly slots.' +
+      compressNote(tt);
     ps.getCell(2, 1).font = { name: 'Georgia', size: 9, italic: true, color: { argb: argb(MUTE) } };
     ps.getCell(2, 1).alignment = { wrapText: true }; ps.getRow(2).height = 28;
 

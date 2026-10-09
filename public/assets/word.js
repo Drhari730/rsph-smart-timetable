@@ -88,6 +88,8 @@ function downloadWord(tt, opts) {
       c.credits != null ? c.credits + ' credits' : null,
       c.faculty ? 'Faculty: ' + P(c.faculty) : null,
       'Plan starts ' + dmy(planStart),
+      (function () { const sc = TT.moduleSchedule(tt, code);
+        return sc.endBy ? 'Finishes by ' + dmy(sc.endBy) + (sc.scale < 1 ? ' (units compressed to ' + Math.round(sc.scale * 100) + '% of specified hours)' : '') : null; })(),
       rows.length + ' session' + (rows.length === 1 ? '' : 's') + ' in this period'
     ].filter(Boolean).join(' · '), { size: 18, color: MUTE }), { spacing: { after: 120 } }));
 
