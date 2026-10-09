@@ -292,3 +292,5 @@ body.modal-open{overflow:hidden;}
 li.topic-today{font-weight:700;background:var(--surface-alt);border-radius:8px;padding:4px 8px 4px 16px !important;}
 .topic-banner{padding:10px 20px;background:#FBEAE7;color:var(--ink);font-size:13.5px;border-bottom:1px solid var(--border);}
 .topic-banner strong{color:var(--wine);}
+.course-pick-group{flex-basis:100%;}
+.range-bar .seg.course-pick button{white-space:normal;text-align:left;font-size:12.5px;}

@@ -20,6 +20,11 @@ function boxed(cell, edge) {
   cell.border = { top: thin(GRID), bottom: thin(GRID), right: thin(GRID),
                   left: edge ? { style: 'thick', color: { argb: argb(edge) } } : thin(GRID) };
 }
+/* " · Epidemiology, Biostatistics" when the download is limited to some courses */
+function onlyLabel(tt) {
+  if (!tt.onlyCodes) return '';
+  return ' · ' + tt.onlyCodes.map(c => { const x = TT.course(tt.prog, c); return x ? TT.plain(x.title) : c; }).join(', ');
+}
 function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
 function dmy(d) { return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
 
@@ -33,6 +38,7 @@ const short = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short
            none — the plain recurring week } */
 function downloadExcel(tt, opts) {
   opts = opts || {};
+  if (opts.codes && opts.codes.length) tt = TT.filterTT(tt, opts.codes);
   if (!global.ExcelJS) { alert('The spreadsheet library did not load. Please refresh and try again.'); return Promise.resolve(); }
   const P = TT.plain;
   const p = RSPH.programmes[tt.prog];
@@ -63,7 +69,7 @@ function scheduleSheet(wb, tt, from, to) {
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   [13, 11, 15, 30, 10, 16, 30, 30, 46].forEach((w, i) => { ss.getColumn(i + 1).width = w; });
   ss.mergeCells(1, 1, 1, 9);
-  ss.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · ' + dmy(from) + ' to ' + dmy(to);
+  ss.getCell(1, 1).value = P(p.name) + ' — Semester ' + tt.sem + ' · ' + dmy(from) + ' to ' + dmy(to) + onlyLabel(tt);
   ss.getCell(1, 1).font = { name: 'Georgia', size: 14, bold: true, color: { argb: argb(WINE) } };
   ss.mergeCells(2, 1, 2, 9);
   ss.getCell(2, 1).value = 'Every scheduled session in the selected dates, with the module planned for that day. ' +
@@ -134,7 +140,7 @@ function gridSheet(wb, tt, sheetName, weekStart, from, to) {
   };
   title(1, P(RSPH.meta.school || 'Ramaiah School of Public Health').toUpperCase(),
         { name: 'Georgia', size: 9, bold: true, color: { argb: argb(CORAL) } }, 16);
-  title(2, P(p.name) + ' — Semester ' + tt.sem,
+  title(2, P(p.name) + ' — Semester ' + tt.sem + onlyLabel(tt),
         { name: 'Georgia', size: 16, bold: true, color: { argb: argb(WINE) } }, 26);
   const weekTxt = opts.weekStart ? ' · Week of ' + dmy(opts.weekStart) + ' – ' + dmy(addDays(opts.weekStart, 6)) : '';
   title(3, 'Batch ' + tt.batch + ' · Academic Year ' + tt.ay + ' · ' + P(tt.venue) + weekTxt +
@@ -342,7 +348,7 @@ function finish(wb, tt, opts) {
     });
   });
 
-  const fname = 'RSPH-' + p.short + '-Sem' + tt.sem + (opts.from && opts.to ? '-' + TT.ymd(opts.from) + '-to-' + TT.ymd(opts.to)
+  const fname = 'RSPH-' + p.short + '-Sem' + tt.sem + (tt.onlyCodes ? '-' + tt.onlyCodes.join('-') : '') + (opts.from && opts.to ? '-' + TT.ymd(opts.from) + '-to-' + TT.ymd(opts.to)
     : opts.weekStart ? '-week-' + TT.ymd(opts.weekStart) : '') + '.xlsx';
   return wb.xlsx.writeBuffer().then(buf => {
     const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

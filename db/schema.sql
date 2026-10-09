@@ -34,6 +34,9 @@ ALTER TABLE courses ADD COLUMN IF NOT EXISTS faculty TEXT;
 -- Aim and Course Outcomes from the approved Course Specifications (shown when a session is clicked).
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS aim TEXT;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS outcomes JSONB;
+-- Date the course's day-wise teaching plan starts, when it isn't the
+-- timetable's own start date (e.g. a course that begins later in the term).
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS plan_start DATE;
 
 CREATE TABLE IF NOT EXISTS electives (
   id         SERIAL PRIMARY KEY,

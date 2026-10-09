@@ -233,6 +233,8 @@ function courseForm(c) {
     field('Title', '<input id="cf-title" value="' + escAttr(TT.plain(c.title || '')) + '" placeholder="Full course title"/>') +
     field('Faculty in charge of this subject (used to auto-total load hours below)',
       '<input id="cf-faculty" value="' + escAttr(c.faculty) + '" placeholder="e.g. Dr. Mrinalini &mdash; leave blank if not yet assigned"/>') +
+    field('Teaching plan starts on (only if this course starts later than the semester)',
+      '<input id="cf-planstart" type="date" value="' + escAttr(c.plan_start || '') + '"/>') +
     '<p class="form-error" id="cf-error"></p>' +
     '<div class="actions">' +
       '<button class="btn primary" id="cf-save" type="button">' + (c.id ? 'Save changes' : 'Add course') + '</button>' +
@@ -307,7 +309,8 @@ function wireCourseForm(rows) {
       credits: parseFloat(document.getElementById('cf-credits').value) || 0,
       notes: document.getElementById('cf-notes').value.trim() || null,
       title: document.getElementById('cf-title').value.trim(),
-      faculty: document.getElementById('cf-faculty').value.trim() || null
+      faculty: document.getElementById('cf-faculty').value.trim() || null,
+      plan_start: document.getElementById('cf-planstart').value || null
     };
     var err = document.getElementById('cf-error');
     if (!body.code || !body.title) { err.textContent = 'Code and title are required.'; return; }

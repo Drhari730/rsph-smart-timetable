@@ -45,6 +45,7 @@
     <button class="btn" id="btn-png" type="button">&#8681; Download PNG</button>
     <button class="btn" id="btn-pdf" type="button">&#8681; Download PDF</button>
     <button class="btn" id="btn-xlsx" type="button" title="Spreadsheet in the same layout and colours, with the day-wise teaching plan">&#8681; Download Excel</button>
+    <button class="btn" id="btn-docx" type="button" title="Word document: course-wise schedule with unit and topic for every session">&#8681; Download Word</button>
     <button class="btn primary" id="btn-print" type="button">&#128438; Print</button>
   </div>
 </div>
@@ -70,6 +71,10 @@
       <button type="button" data-range="term">Whole semester</button>
     </div>
   </div>
+  <div class="control-group course-pick-group">
+    <label>Courses to include (pick one or more &mdash; none picked means all)</label>
+    <div class="seg course-pick" id="seg-courses"></div>
+  </div>
   <p class="range-sum" id="r-sum"></p>
 </div>
 
@@ -84,6 +89,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="assets/excel.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="assets/word.js"></script>
 <script>
 RSPH_READY.then(function(){
   TT.mountChrome('timetable.html');
@@ -156,6 +163,35 @@ RSPH_READY.then(function(){
   /* ---------- download range ---------- */
   // null = follow the week on screen; otherwise {from, to} the user picked
   var range = null;
+  // course codes the downloads are limited to; empty = everything
+  var picked = [], pickedFor = null;
+  function buildCoursePick(tt){
+    if (pickedFor !== tt.id) { picked = []; pickedFor = tt.id; }
+    var codes = [];
+    RSPH.DAYS.forEach(function(d){ (tt.days[d] || []).forEach(function(b){ if (b.c && codes.indexOf(b.c) < 0) codes.push(b.c); }); });
+    document.getElementById('seg-courses').innerHTML =
+      '<button type="button" data-code="" aria-pressed="' + (!picked.length) + '">All</button>' +
+      codes.map(function(c){
+        var x = TT.course(tt.prog, c);
+        return '<button type="button" data-code="' + c + '" aria-pressed="' + (picked.indexOf(c) >= 0) + '" title="' + c + '">' +
+               (x ? x.title : c) + '</button>';
+      }).join('');
+  }
+  document.getElementById('seg-courses').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-code]'); if (!b) return;
+    var c = b.getAttribute('data-code');
+    if (!c) picked = [];
+    else if (picked.indexOf(c) >= 0) picked.splice(picked.indexOf(c), 1);
+    else picked.push(c);
+    TT.$$('#seg-courses button').forEach(function(x){
+      var xc = x.getAttribute('data-code');
+      x.setAttribute('aria-pressed', String(xc ? picked.indexOf(xc) >= 0 : !picked.length));
+    });
+    syncRangeUI();
+  });
+  function pickedNames(tt){
+    return picked.map(function(c){ var x = TT.course(tt.prog, c); return x ? TT.plain(x.title) : c; });
+  }
   function isoOf(d){ return TT.ymd(d); }
   function currentRange(){
     if (range) return range;
@@ -172,7 +208,9 @@ RSPH_READY.then(function(){
     document.getElementById('r-sum').innerHTML = 'Downloads cover <strong>' + TT.fmtDate(r.from) + ' &ndash; ' + TT.fmtDate(r.to) +
       '</strong> (' + days + ' day' + (days === 1 ? '' : 's') + ', ' + weeks + ' week' + (weeks === 1 ? '' : 's') + '). ' +
       'Excel: a day-by-day schedule plus one sheet per week. PDF: one page per ' + (state.view === 'calendar' ? 'month' : 'week') +
-      '. PNG: one image.' + (range ? '' : ' Following the week on screen.');
+      '. PNG: one image. Word: course-wise list with the unit and topic of every session.' +
+      (range ? '' : ' Following the week on screen.') +
+      '<br>Courses: <strong>' + (picked.length ? pickedNames(TT.getTT(state.prog, state.sem)).join(', ') : 'all sessions') + '</strong>';
     TT.$$('#seg-range button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.range === (range ? range.preset : 'shown'))); });
   }
   function readInputs(){
@@ -231,8 +269,19 @@ RSPH_READY.then(function(){
     btn.textContent = 'Preparing…'; btn.disabled = true;
     var r = currentRange();
     Promise.resolve().then(function(){
-      return TT_EXCEL.downloadExcel(tt, { from: r.from, to: r.to });
+      return TT_EXCEL.downloadExcel(tt, { from: r.from, to: r.to, codes: picked.slice() });
     }).catch(function(e){ console.error(e); alert('Could not generate the spreadsheet. Please try again.'); })
+      .then(function(){ btn.textContent = label; btn.disabled = false; });
+  });
+  document.getElementById('btn-docx').addEventListener('click', function(){
+    var tt = TT.getTT(state.prog, state.sem);
+    if (!tt) { alert('No timetable is issued for this selection yet.'); return; }
+    var btn = this, label = btn.textContent;
+    btn.textContent = 'Preparing…'; btn.disabled = true;
+    var r = currentRange();
+    Promise.resolve().then(function(){
+      return TT_WORD.downloadWord(tt, { from: r.from, to: r.to, codes: picked.slice() });
+    }).catch(function(e){ console.error(e); alert('Could not generate the Word file. Please try again.'); })
       .then(function(){ btn.textContent = label; btn.disabled = false; });
   });
 
@@ -257,17 +306,19 @@ RSPH_READY.then(function(){
         '<div style="font-size:12.5px;color:#7A6C7D">Batch ' + tt.batch + ' &middot; Academic Year ' + tt.ay +
           ' &middot; ' + tt.venue + ' &middot; ' + TT.fmtDate(r.from) + ' &ndash; ' + TT.fmtDate(r.to) +
           ' &middot; Downloaded ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '</div>' +
-      '</div>' + TT.renderLegend(tt) + '<div class="month-title" style="margin:6px 0 10px">' + sub + '</div>';
+      (picked.length ? '<div style="font-size:13px;color:#381A6B;font-weight:700;margin-top:4px">Courses: ' + pickedNames(tt).join(', ') + '</div>' : '') +
+      '</div>' + TT.renderLegend(ttR) + '<div class="month-title" style="margin:6px 0 10px">' + sub + '</div>';
     };
+    var ttR = TT.filterTT(tt, picked);
     var blocks = state.view === 'calendar'
       ? monthsIn(r).map(function(mm){
-          return { title: TT.MONTH_NAMES[mm.m] + ' ' + mm.y, html: TT.renderMonthCalendar(tt, mm.y, mm.m) };
+          return { title: TT.MONTH_NAMES[mm.m] + ' ' + mm.y, html: TT.renderMonthCalendar(ttR, mm.y, mm.m) };
         })
       : weeksIn(r).map(function(w){
           var a = w < r.from ? r.from : w, e = addDays(w, 6); if (e > r.to) e = r.to;
           var o = { weekStart: w, from: r.from, to: r.to };
           return { title: 'Week of ' + TT.fmtDate(a) + ' &ndash; ' + TT.fmtDate(e),
-                   html: state.view === 'grid' ? TT.renderGrid(tt, o) : TT.renderAgenda(tt, o) };
+                   html: state.view === 'grid' ? TT.renderGrid(ttR, o) : TT.renderAgenda(ttR, o) };
         });
 
     var mk = function(inner){
@@ -283,7 +334,7 @@ RSPH_READY.then(function(){
         .then(function(c){ document.body.removeChild(node); return c; },
               function(e){ document.body.removeChild(node); throw e; });
     };
-    var fname = 'RSPH-' + p.short + '-Sem' + state.sem + '-' + rangeTag(r);
+    var fname = 'RSPH-' + p.short + '-Sem' + state.sem + (picked.length ? '-' + picked.join('-') : '') + '-' + rangeTag(r);
     var done = function(){ btn.textContent = label; btn.disabled = false; };
     var fail = function(e){ console.error(e); alert('Could not generate the file. Please try again.'); };
 
@@ -508,6 +559,7 @@ RSPH_READY.then(function(){
     TT.wireSessionClicks(document.getElementById('body'), tt);
 
     document.getElementById('range-bar').style.display = '';
+    buildCoursePick(tt);
     syncRangeUI();
 
   }

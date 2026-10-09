@@ -57,7 +57,7 @@ const courses = [
   { prog:'mph', sem:3, code:'PHC601A', title:'Global Health', credits:2, type:'core', notes:'phc601a.html' },
   { prog:'mph', sem:3, code:'PHC602A', title:'Technology in Public Health', credits:3, type:'core', notes:'phc602a.html' },
   { prog:'mph', sem:3, code:'PHC603A', title:'Programme Planning and Evaluation', credits:3, type:'core', notes:'phc603a.html' },
-  { prog:'mph', sem:3, code:'PHC604A', title:'Demography and Population Sciences', credits:2, type:'core', notes:'phc604a.html' },
+  { prog:'mph', sem:3, code:'PHC604A', title:'Demography and Population Sciences', credits:2, type:'core', notes:'phc604a.html', planStart:'2026-10-22' },
   { prog:'mph', sem:3, code:'PHE6XXA', title:'Major Discipline Elective &ndash; 2 (MDEC-2)', credits:3, type:'elective', notes:'phe601a.html' },
   { prog:'mph', sem:3, code:'PHP605A', title:'Project Work', credits:5, type:'experiential' },
   { prog:'mph', sem:3, code:'PHP606A', title:'Dissertation &mdash; Part 1', credits:3, type:'experiential' },
@@ -147,11 +147,11 @@ const timetables = [
     "ay": "2026-27",
     "faculty": "Faculty of Life and Allied Health Sciences",
     "venue": "Classroom 1 / available classroom",
-    "start": null,
+    "start": "2026-10-26",
     "end": "2027-02-20",
     "source": "MPH Programme &ndash; Semester 1 Timetable (revised, Oct 2026) &middot; School of Public Health",
     "flags": [
-      "Start date is not on record &mdash; the day-wise plan assumes teaching from 1 September 2026. The semester runs until 20 February 2027.",
+      "Semester 1 teaching runs from 26 October 2026 to 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
       "Wednesday 10:45 am &ndash; 12:00 pm Seminar slot given to Public Health Systems &amp; Health Policy so its 45 specified hours fit within the semester."
     ],

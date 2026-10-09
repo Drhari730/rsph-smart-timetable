@@ -344,6 +344,16 @@ function cellHTML(tt, b, opts, ctx) {
     '</div>';
 }
 
+/* A copy of a timetable holding only the given courses' blocks (all of
+   them when codes is empty) - what the course-wise downloads render. Same
+   id, so the per-course module schedule cache still applies. */
+function filterTT(tt, codes) {
+  if (!codes || !codes.length) return tt;
+  const days = {};
+  Object.keys(tt.days).forEach(d => { days[d] = (tt.days[d] || []).filter(b => b.c && codes.indexOf(b.c) >= 0); });
+  return Object.assign({}, tt, { days: days, onlyCodes: codes.slice() });
+}
+
 function matches(b, f) {
   if (!f) return true;
   if (f.kind && b.k !== f.kind) return false;
@@ -545,7 +555,7 @@ function moduleSchedule(tt, code, maxWeeks) {
     occurrences.sort((a, b) => RSPH.DAYS.indexOf(a.day) - RSPH.DAYS.indexOf(b.day) || a.block.i - b.block.i);
 
     const now = new Date();
-    const realStart = tt.start ? parseDate(tt.start) : new Date(now.getFullYear(), 8, 1);
+    const realStart = planStartOf(tt, code);
     const termEnd = tt.end ? parseDate(tt.end) : null;
     const weekStart0 = mondayOfWeek(realStart);
 
@@ -599,6 +609,15 @@ function modShort(e) {
 function topicText(e, sep) {
   const ts = e.module.topics || [];
   return (e.topicIdx || []).map(i => ts[i] && ts[i].text).filter(Boolean).join(sep || ' · ');
+}
+
+/* The date a course's day-wise plan starts: its own plan start when set
+   (a course that begins later than the rest of the term), otherwise the
+   timetable's start date, otherwise 1 September of the current year. */
+function planStartOf(tt, code) {
+  const c = course(tt.prog, code);
+  if (c && c.planStart) return parseDate(c.planStart);
+  return tt.start ? parseDate(tt.start) : new Date(new Date().getFullYear(), 8, 1);
 }
 
 function moduleForDate(tt, code, date) {
@@ -731,7 +750,8 @@ function teachingPlanTable(tt, code, currentIdx) {
   const mods = courseModules(tt.prog, code);
   if (!mods.length) return '';
   const sched = moduleSchedule(tt, code);
-  const undated = !tt.start;
+  const undated = !tt.start && !(course(tt.prog, code) || {}).planStart;
+  const ownStart = (course(tt.prog, code) || {}).planStart;
   const rows = mods.map((m, i) => {
     const sess = sched.filter(x => x.moduleIndex === i);
     const when = sess.length
@@ -743,7 +763,8 @@ function teachingPlanTable(tt, code, currentIdx) {
   }).join('');
   return '<h3 class="sd-h">Teaching plan for the course</h3>' +
     '<p class="sd-sub">Units in the order of the approved Course Specification, each given its approved hours ' +
-    'and laid over this subject&rsquo;s real weekly slots' + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
+    'and laid over this subject&rsquo;s real weekly slots' +
+    (ownStart ? ', starting ' + fmtDate(parseDate(ownStart)) : '') + (undated ? ' &mdash; dates assume teaching from 1 September, since ' +
     'no start date is on record for this timetable' : '') + '.</p>' +
     '<table class="data-table"><thead><tr><th class="num">#</th><th>Unit / module</th><th class="num">Hours</th>' +
     '<th class="num">Sessions</th><th>Dates</th></tr></thead><tbody>' + rows + '</tbody></table>';
@@ -802,6 +823,9 @@ function sessionDetail(tt, day, bi, dateStr) {
   } else if (b.k === 'field') {
     h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Field posting</span>Practical time attached to this ' +
       'course; it doesn&rsquo;t use up the classroom hours of its modules.</p>';
+  } else if (date && date < planStartOf(tt, b.c) && courseModules(tt.prog, b.c).length) {
+    h += '<p class="note" style="margin-top:14px"><span class="note-lbl">Teaching plan not started yet</span>The day-wise plan for ' +
+      'this course starts on <strong>' + fmtDate(planStartOf(tt, b.c)) + '</strong>.</p>';
   } else if (date && !dateInTerm(tt, date)) {
     h += '<p class="note warn" style="margin-top:14px"><span class="note-lbl">Not in term</span>This date falls outside the ' +
       'timetable&rsquo;s own term dates.</p>';
@@ -953,7 +977,7 @@ global.TT = {
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
-  courseModules, moduleSchedule, moduleForDate, renderModuleDetail, modLabel, modShort, topicText,
+  courseModules, moduleSchedule, moduleForDate, planStartOf, filterTT, renderModuleDetail, modLabel, modShort, topicText,
   sessionDetail, openModal, closeModal, wireSessionClicks, mondayOfWeek, ymd, dateInTerm,
   mountChrome, reveal, countUp
 };
