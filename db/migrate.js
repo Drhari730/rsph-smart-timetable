@@ -139,7 +139,7 @@ async function backfillCourseInfo() {
    credits / aim / outcomes are updated. Recorded in site_settings so it
    never runs again and later admin edits stay as they are. */
 async function applySpec2026Sem1() {
-  const KEY = 'spec2026_sem1';
+  const KEY = 'spec2026_sem1_v2'; // v2: labs interleaved with their lectures
   const done = await pool.query('SELECT 1 FROM site_settings WHERE key = $1', [KEY]);
   if (done.rowCount) return;
   const client = await pool.connect();

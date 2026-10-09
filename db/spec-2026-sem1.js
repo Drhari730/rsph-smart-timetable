@@ -530,10 +530,10 @@ const units = {
       topics: [
         T('Scope of statistics in public health', 1),
         T('Data types and measurement scales', 1.5),
-        T('Tabulation and graphical presentation of data', 2),
         T('Data preparation: coding, entry and cleaning principles', 1.5),
         T('Data management in R / jamovi: import, cleaning and recoding', 2),
         T('Lab: set up R / jamovi; import, clean and recode a survey dataset', 3),
+        T('Tabulation and graphical presentation of data', 2),
         T('Lab: tables and graphs in R / jamovi', 2)
       ],
       guide: {
@@ -553,10 +553,10 @@ const units = {
       topics: [
         T('Measures of central tendency', 1.5),
         T('Measures of dispersion', 1.5),
+        T('Lab: descriptive statistics by group', 2.5),
         T('Probability: rules and conditional probability', 2),
         T('The normal distribution and z-scores', 1.5),
         T('Binomial and Poisson distributions', 1.5),
-        T('Lab: descriptive statistics by group', 2.5),
         T('Lab: probability distributions and normality checks', 2.5)
       ],
       guide: {
@@ -576,10 +576,10 @@ const units = {
       topics: [
         T('Probability sampling methods', 1.5),
         T('Non-probability sampling methods', 1),
+        T('Lab: draw simple random, stratified and cluster samples', 2),
         T('Sample size for a proportion and for a mean', 1.5),
         T('Sample size for comparing two groups; design effect', 1.5),
         T('Sample size tools: OpenEpi and G*Power', 1.5),
-        T('Lab: draw simple random, stratified and cluster samples', 2),
         T('Lab: sample size calculations in OpenEpi and G*Power', 3)
       ],
       guide: {
@@ -602,11 +602,11 @@ const units = {
         T('Type I and II errors, power and multiple comparisons', 1.5),
         T('t-tests: one-sample, independent and paired', 2),
         T('One-way ANOVA', 1.5),
+        T('Lab: t-tests and ANOVA', 3),
         T('Chi-square, Fisher\'s exact and McNemar tests', 2),
         T('Non-parametric tests: Mann-Whitney, Wilcoxon, Kruskal-Wallis', 2),
-        T('Choosing the right test', 1),
-        T('Lab: t-tests and ANOVA', 3),
         T('Lab: chi-square and non-parametric tests', 3),
+        T('Choosing the right test', 1),
         T('Lab: choose-the-test exercise', 2)
       ],
       guide: {
@@ -628,9 +628,9 @@ const units = {
         T('Simple and multiple linear regression', 2),
         T('Logistic regression', 2),
         T('Model diagnostics and interpreting adjusted estimates', 2),
+        T('Lab: linear and logistic regression', 3),
         T('Introduction to Poisson regression', 1, 'desirable'),
         T('Introduction to survival analysis: Kaplan-Meier and Cox regression', 1.5, 'desirable'),
-        T('Lab: linear and logistic regression', 3),
         T('Lab: practical examination with data analysis stations', 4)
       ],
       guide: {
