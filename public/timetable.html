@@ -455,10 +455,10 @@ RSPH_READY.then(function(){
       '<div class="section-title" style="margin-top:44px"><span class="num">&sum;</span><div>' +
         '<h2>Weekly load, computed from the grid</h2>' +
         '<p class="sub">Lunch columns crossed by a spanning block are excluded from the totals.</p></div></div>' +
-      '<table class="data-table"><thead><tr>' +
+      '<div class="tt-scroll"><table class="data-table"><thead><tr>' +
         '<th>Code</th><th>Course / activity</th><th class="num">Credits</th>' +
         '<th class="num">Sessions</th><th>Hours per week</th></tr></thead>' +
-        '<tbody>' + loadRows + '</tbody></table>' +
+        '<tbody>' + loadRows + '</tbody></table></div>' +
       covNote;
 
     var calendarHint = '<p class="note" style="margin:14px 0 0"><span class="note-lbl">Click any session</span>' +
