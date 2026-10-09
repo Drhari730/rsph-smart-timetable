@@ -152,7 +152,8 @@ const timetables = [
     "source": "MPH Programme &ndash; Semester 1 Timetable (revised, Oct 2026) &middot; School of Public Health",
     "flags": [
       "Start Date and End Date are not on record &mdash; the day-wise module plan assumes teaching from 1 September until a start date is entered.",
-      "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected."
+      "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
+      "Wednesday 10:45 am &ndash; 12:00 pm Seminar slot given to Public Health Systems &amp; Health Policy so its 45 specified hours fit within the semester."
     ],
     "slots": [
       {
@@ -281,8 +282,10 @@ const timetables = [
         {
           "i": 1,
           "n": 1,
-          "t": "Seminar",
-          "k": "academic"
+          "t": "Public Health Systems and Health Policy",
+          "k": "lecture",
+          "c": "PHC502A",
+          "f": "Dr. G Hari Prakash"
         },
         {
           "i": 2,
