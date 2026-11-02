@@ -97,7 +97,7 @@ function scheduleSheet(wb, tt, from, to) {
   let r = 5, band = 0;
   for (let d = new Date(from.getTime()); sameOrBefore(d, to); d = addDays(d, 1)) {
     const day = RSPH.DAYS[(d.getDay() + 6) % 7];
-    const blocks = (tt.days[day] || []).slice().sort((a, b) => a.i - b.i);
+    const blocks = TT.dayBlocks(tt, day, d).slice().sort((a, b) => a.i - b.i);
     if (!blocks.length) continue;
     band++;
     if (!TT.dateInTerm(tt, d)) {
@@ -193,7 +193,7 @@ function gridSheet(wb, tt, sheetName, weekStart, from, to) {
       boxed(c);
     }
 
-    tt.days[day].slice().sort((a, b) => a.i - b.i).forEach(b => {
+    TT.dayBlocks(tt, day, date).slice().sort((a, b) => a.i - b.i).forEach(b => {
       const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
       const c0 = b.i + 2, c1 = Math.min(b.i + b.n - 1, nSlots - 1) + 2;
       if (c1 > c0) ws.mergeCells(row, c0, row, c1);

@@ -309,6 +309,13 @@ function downloadICS(tt) {
 function ymd(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+/* The blocks running on a day: a date-specific override (exam day, holiday)
+   when one is stored in tt.days.__dates, otherwise the weekly pattern. */
+function dayBlocks(tt, day, date) {
+  const o = date && tt.days.__dates && tt.days.__dates[ymd(date)];
+  return o || tt.days[day] || [];
+}
+
 function dateInWeek(weekStart, dayKey) {
   return new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + RSPH.DAYS.indexOf(dayKey));
 }
@@ -350,7 +357,11 @@ function cellHTML(tt, b, opts, ctx) {
 function filterTT(tt, codes) {
   if (!codes || !codes.length) return tt;
   const days = {};
-  Object.keys(tt.days).forEach(d => { days[d] = (tt.days[d] || []).filter(b => b.c && codes.indexOf(b.c) >= 0); });
+  Object.keys(tt.days).forEach(d => { if (Array.isArray(tt.days[d])) days[d] = tt.days[d].filter(b => b.c && codes.indexOf(b.c) >= 0); });
+  if (tt.days.__dates) {
+    days.__dates = {};
+    Object.keys(tt.days.__dates).forEach(k => { days.__dates[k] = tt.days.__dates[k].filter(b => b.c && codes.indexOf(b.c) >= 0); });
+  }
   return Object.assign({}, tt, { days: days, onlyCodes: codes.slice() });
 }
 
@@ -405,7 +416,7 @@ function renderGrid(tt, opts) {
          (isToday ? '<span class="tt-today-tag">Today</span>' : '') +
          (outTerm ? '<span class="tt-out-tag">Not in term</span>' : '') + '</th>';
 
-    const blocks = (tt.days[day] || []).map((b, bi) => ({ b, bi })).sort((x, y) => x.b.i - y.b.i);
+    const blocks = dayBlocks(tt, day, date).map((b, bi) => ({ b, bi })).sort((x, y) => x.b.i - y.b.i);
     let col = 0;
     blocks.forEach(item => {
       const b = item.b, bi = item.bi;
@@ -451,7 +462,8 @@ function renderAgenda(tt, opts) {
     const date = ws ? dateInWeek(ws, day) : null;
     const isToday = date ? sameYMD(date, nowD) : (liveOK && day === todayKey);
     const outTerm = date && !dateInTerm(tt, date);
-    const rows = sessions(tt).filter(s => s.day === day)
+    const dayList = dayBlocks(tt, day, date);
+    const rows = sessions(Object.assign({}, tt, { days: { [day]: dayList } })).filter(s => s.day === day)
       .sort((a, b) => a.start - b.start)
       .filter(s => matches(s.block, opts.filter));
     if (!rows.length) return '';
@@ -461,7 +473,7 @@ function renderAgenda(tt, opts) {
       (outTerm ? ' <span class="tt-out-tag">Not in term</span>' : '') + '</h3>' +
       rows.map(s => {
         const k = RSPH.kinds[s.kind];
-        const bi = tt.days[day].indexOf(s.block);
+        const bi = dayList.indexOf(s.block);
         const mod = moduleOnDate(tt, s.block, date);
         return '<div class="agenda-row tt-click" style="--k:' + k.color + ';--kbg:' + k.bg + '" data-day="' + day +
           '" data-bi="' + bi + '"' + (date ? ' data-date="' + ymd(date) + '"' : '') + ' tabindex="0" role="button">' +
@@ -549,6 +561,7 @@ function moduleSchedule(tt, code, maxWeeks) {
   const occurrences = [];
   RSPH.DAYS.forEach(day => {
     (tt.days[day] || []).forEach(b => { if (b.c === code && b.k !== 'field') occurrences.push({ day, block: b }); });
+    if (tt.days.__dates) Object.keys(tt.days.__dates).forEach(k => tt.days.__dates[k].forEach(b => { if (b.c === code && b.k !== 'field') occurrences.push({ day: RSPH.DAYS[(parseDate(k).getDay() + 6) % 7], block: b, only: k }); }));
   });
   let out = [];
   if (mods.length && occurrences.length) {
@@ -573,6 +586,9 @@ function moduleSchedule(tt, code, maxWeeks) {
           const date = new Date(weekStart0.getFullYear(), weekStart0.getMonth(), weekStart0.getDate() + week * 7 + idx);
           if (date < realStart) continue;
           if (limit && date > limit) break outer;
+          // a date override replaces the weekly pattern for that day
+          const ov = tt.days.__dates && tt.days.__dates[ymd(date)];
+          if (occ.only ? occ.only !== ymd(date) : !!ov) continue;
           const dur = netMinutes(tt, occ.block) / 60;
           res.push({ date, day: occ.day, slot: occ.block.i, module: mods[modIdx], moduleIndex: modIdx,
                      topicIdx: topicsCovered(mods[modIdx], hoursUsed / f, dur / f) });
@@ -687,7 +703,7 @@ function renderMonthCalendar(tt, year, month) {
     const isToday = sameYMD(c.date, today);
     // Outside the timetable's own term dates nothing is actually running, so
     // the day is shown empty rather than listing a timetable that isn't in force.
-    const blocks = inTerm ? (tt.days[dayKey] || []).map((b, bi) => ({ b, bi }))
+    const blocks = inTerm ? dayBlocks(tt, dayKey, c.date).map((b, bi) => ({ b, bi }))
       .filter(x => x.b.k !== 'lunch').sort((x, y) => x.b.i - y.b.i) : [];
     h += '<div class="cal-cell' + (inTerm ? '' : ' out-term') + (isToday ? ' is-today' : '') + '">' +
       '<span class="cal-daynum">' + c.day + (isToday ? '<span class="cal-today-dot"></span>' : '') + '</span>' +
@@ -806,7 +822,7 @@ function teachingPlanTable(tt, code, currentIdx) {
 }
 
 function sessionDetail(tt, day, bi, dateStr) {
-  const b = (tt.days[day] || [])[bi];
+  const b = dayBlocks(tt, day, dateStr ? parseDate(dateStr) : null)[bi];
   if (!b) return '<p>Session not found.</p>';
   const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
   const c = course(tt.prog, b.c);
@@ -1012,7 +1028,7 @@ global.TT = {
   buildICS, downloadICS,
   renderGrid, renderAgenda, renderLegend,
   monthList, renderMonthCalendar, MONTH_NAMES,
-  courseModules, moduleSchedule, moduleForDate, planStartOf, planEndOf, filterTT, renderModuleDetail, modLabel, modShort, topicText,
+  dayBlocks, courseModules, moduleSchedule, moduleForDate, planStartOf, planEndOf, filterTT, renderModuleDetail, modLabel, modShort, topicText,
   sessionDetail, openModal, closeModal, wireSessionClicks, mondayOfWeek, ymd, dateInTerm,
   mountChrome, reveal, countUp
 };

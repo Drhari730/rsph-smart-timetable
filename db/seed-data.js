@@ -36,6 +36,7 @@ const kinds = {
   selfstudy: { label: 'Self-directed / library',  color: '#5A6472', bg: '#EEF1F4', teaching: false },
   remedial:  { label: 'Remedial / support',       color: '#4A7A96', bg: '#E7F0F5', teaching: false },
   optional:  { label: 'Optional / if planned',    color: '#7A6C7D', bg: '#F1EDF1', teaching: false },
+  exam:      { label: 'Examination',              color: '#9E2A57', bg: '#F8E6EE', teaching: false },
   lunch:     { label: 'Lunch break',              color: '#9A8F9C', bg: '#F5F0EC', teaching: false }
 };
 
