@@ -328,7 +328,7 @@ function dateInTerm(tt, d) {
    carry a course code but aren't classroom teaching, so they don't consume
    (or show) a module. */
 function moduleOnDate(tt, b, date) {
-  if (!date || !b.c || b.k === 'field' || !dateInTerm(tt, date)) return null;
+  if (!date || !b.c || b.k === 'field' || b.k === 'exam' || !dateInTerm(tt, date)) return null;
   return moduleForDate(tt, b.c, date, b);
 }
 
@@ -561,8 +561,8 @@ function moduleSchedule(tt, code, maxWeeks) {
   const occurrences = [];
   RSPH.DAYS.forEach(day => {
     (tt.days[day] || []).forEach(b => { if (b.c === code && b.k !== 'field') occurrences.push({ day, block: b }); });
-    if (tt.days.__dates) Object.keys(tt.days.__dates).forEach(k => tt.days.__dates[k].forEach(b => { if (b.c === code && b.k !== 'field') occurrences.push({ day: RSPH.DAYS[(parseDate(k).getDay() + 6) % 7], block: b, only: k }); }));
   });
+  if (tt.days.__dates) Object.keys(tt.days.__dates).forEach(k => tt.days.__dates[k].forEach(b => { if (b.c === code && b.k !== 'field' && b.k !== 'exam') occurrences.push({ day: RSPH.DAYS[(parseDate(k).getDay() + 6) % 7], block: b, only: k }); }));
   let out = [];
   if (mods.length && occurrences.length) {
     occurrences.sort((a, b) => RSPH.DAYS.indexOf(a.day) - RSPH.DAYS.indexOf(b.day) || a.block.i - b.block.i);
