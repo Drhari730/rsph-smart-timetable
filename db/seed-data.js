@@ -148,11 +148,11 @@ const timetables = [
     "ay": "2026-27",
     "faculty": "Faculty of Life and Allied Health Sciences",
     "venue": "Classroom 1 / available classroom",
-    "start": "2026-10-26",
+    "start": "2026-11-16",
     "end": "2027-02-20",
     "source": "MPH Programme &ndash; Semester 1 Timetable (revised, Oct 2026) &middot; School of Public Health",
     "flags": [
-      "Semester 1 teaching runs from 26 October 2026 to 20 February 2027.",
+      "Semester 1 officially starts on 16 November 2026 (Day 1) and runs to 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
       "Wednesday 10:45 am &ndash; 12:00 pm Seminar slot given to Public Health Systems &amp; Health Policy so its 45 specified hours fit within the semester."
     ],
