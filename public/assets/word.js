@@ -62,9 +62,104 @@ function downloadWord(tt, opts) {
   const border = c => ({ style: D.BorderStyle.SINGLE, size: 4, color: c || GRID });
   const allBorders = { top: border(), bottom: border(), left: border(), right: border() };
 
+  /* ---------- week-by-week grid pages, laid out like the website ---------- */
+  const gtt = (opts.codes && opts.codes.length) ? TT.filterTT(tt, opts.codes) : tt;
+  const toMin = s => { const a = s.split(':'); return a[0] * 60 + +a[1]; };
+  const PAGE_W = 16838 - 1440;               // A4 landscape minus margins (DXA)
+  const DAY_W = 1350, LUNCH_W = 380;
+  const teachMin = gtt.slots.reduce((a, s) => a + (s.lunch ? 0 : toMin(s.e) - toMin(s.s)), 0);
+  const restW = PAGE_W - DAY_W - LUNCH_W * gtt.slots.filter(s => s.lunch).length;
+  const slotW = gtt.slots.map(s => s.lunch ? LUNCH_W : Math.floor((toMin(s.e) - toMin(s.s)) / teachMin * restW));
+  slotW[slotW.length - 1] += PAGE_W - DAY_W - slotW.reduce((a, b) => a + b, 0);
+  const colW = [DAY_W].concat(slotW);
+  const dx = w => ({ size: w, type: D.WidthType.DXA });
+  const thin = c => ({ style: D.BorderStyle.SINGLE, size: 4, color: c || 'D9CFD6' });
+  const gridBorders = { top: thin(), bottom: thin(), left: thin(), right: thin() };
+  const gp = (runs, o) => new D.Paragraph(Object.assign({ children: [].concat(runs), spacing: { after: 0, line: 230 } }, o || {}));
+  const usedKinds = [];
+
+  function blockCell(b, date, w) {
+    const k = RSPH.kinds[b.k] || RSPH.kinds.lecture;
+    if (usedKinds.indexOf(b.k) < 0) usedKinds.push(b.k);
+    const crs = b.c ? TT.course(gtt.prog, b.c) : null;
+    const m = date && b.c && b.k !== 'field' && b.k !== 'exam' && TT.dateInTerm(gtt, date) ? TT.moduleForDate(gtt, b.c, date, b) : null;
+    const fac = b.f || (crs && crs.faculty);
+    const kids = [];
+    if (b.c) kids.push(gp(run(b.c, { size: 13, bold: true, color: CORAL })));
+    kids.push(gp(run(P(b.t), { size: 15, bold: true, color: hex(k.color) })));
+    if (m) {
+      kids.push(gp(run('□ ' + P(TT.modLabel(m)), { size: 13, bold: true, color: WINE }), { spacing: { before: 30, after: 0, line: 220 } }));
+      const tp = P(TT.topicText(m, '; '));
+      if (tp) kids.push(gp(run('▸ ' + tp, { size: 12.5, italics: true, color: INK }), { spacing: { after: 0, line: 220 } }));
+    }
+    if (fac) kids.push(gp(run(P(fac), { size: 12, color: MUTE }), { spacing: { before: 30, after: 0, line: 220 } }));
+    return new D.TableCell({ children: kids, width: dx(w), columnSpan: b.n > 1 ? b.n : undefined,
+      shading: { fill: hex(k.bg), type: D.ShadingType.CLEAR, color: 'auto' },
+      margins: { top: 50, bottom: 50, left: 80, right: 60 }, verticalAlign: D.VerticalAlign.TOP,
+      borders: Object.assign({}, gridBorders, { left: { style: D.BorderStyle.SINGLE, size: 18, color: hex(k.color) } }) });
+  }
+
+  function weekTable(ws) {
+    const head = new D.TableRow({ tableHeader: true, children: [
+      new D.TableCell({ children: [gp(run('Day', { bold: true, size: 15, color: 'FFFFFF' }))], width: dx(DAY_W),
+        shading: { fill: WINE, type: D.ShadingType.CLEAR, color: 'auto' }, margins: { top: 60, bottom: 60, left: 80, right: 40 }, borders: gridBorders })
+    ].concat(gtt.slots.map((s, i) => new D.TableCell({
+      children: [gp(run(P(s.label), { bold: true, size: s.lunch ? 11 : 14, color: 'FFFFFF' }), { alignment: D.AlignmentType.CENTER })],
+      width: dx(slotW[i]), shading: { fill: WINE, type: D.ShadingType.CLEAR, color: 'auto' },
+      margins: { top: 60, bottom: 60, left: 30, right: 30 }, verticalAlign: D.VerticalAlign.CENTER, borders: gridBorders }))) });
+    const rows = [head];
+    RSPH.DAYS.forEach((day, di) => {
+      const date = addDays(ws, di);
+      if (date < from || date > to) return;
+      const blocks = TT.dayBlocks(gtt, day, date).slice().sort((a, b) => a.i - b.i);
+      if (!blocks.length && !(gtt.days[day] || []).length) return;
+      const inTerm = TT.dateInTerm(gtt, date);
+      const cells = [new D.TableCell({ children: [
+          gp(run(RSPH.DAY_FULL[day], { bold: true, size: 16, color: WINE })),
+          gp(run(date.getDate() + ' ' + TT.MONTH_NAMES[date.getMonth()].slice(0, 3), { size: 13, color: MUTE })),
+          inTerm ? gp(run('')) : gp(run('Not in term', { size: 11, italics: true, color: MUTE }))],
+        width: dx(DAY_W), shading: { fill: 'F5EFF3', type: D.ShadingType.CLEAR, color: 'auto' },
+        margins: { top: 60, bottom: 60, left: 80, right: 40 }, borders: gridBorders })];
+      let col = 0;
+      const list = inTerm ? blocks : [];
+      while (col < gtt.slots.length) {
+        const b = list.find(x => x.i === col);
+        if (b) {
+          const w = slotW.slice(col, col + b.n).reduce((a, c) => a + c, 0);
+          cells.push(blockCell(b, date, w)); col += b.n;
+        } else {
+          const lunch = gtt.slots[col].lunch;
+          cells.push(new D.TableCell({ children: [gp(run(lunch && di === 0 ? '' : ''))], width: dx(slotW[col]),
+            shading: lunch ? { fill: 'EDE6E1', type: D.ShadingType.CLEAR, color: 'auto' } : undefined, borders: gridBorders }));
+          col++;
+        }
+      }
+      rows.push(new D.TableRow({ cantSplit: true, children: cells }));
+    });
+    return new D.Table({ rows, width: dx(PAGE_W), columnWidths: colW, layout: D.TableLayoutType.FIXED });
+  }
+
+  const gridKids = [];
+  let gw = TT.mondayOfWeek(from), gn = 0;
+  while (gw <= to && gn < 60) {
+    const a = gw < from ? from : gw, e = addDays(gw, 6) > to ? to : addDays(gw, 6);
+    gridKids.push(new D.Paragraph({ pageBreakBefore: gn > 0, spacing: { after: 20 },
+      children: [run((RSPH.meta.school ? P(RSPH.meta.school) : 'Ramaiah School of Public Health').toUpperCase(), { bold: true, size: 14, color: CORAL })] }));
+    gridKids.push(para(run(P(p.name) + ' — Semester ' + tt.sem, { bold: true, size: 30, color: WINE }), { spacing: { after: 20 } }));
+    gridKids.push(para(run('Batch ' + tt.batch + ' · Academic Year ' + tt.ay + ' · ' + P(tt.venue) + ' · Downloaded ' + dmy(new Date()), { size: 15, color: MUTE }), { spacing: { after: 60 } }));
+    gridKids.push(para(run('Week of ' + dmy(a) + ' – ' + dmy(e), { bold: true, size: 22, color: WINE }), { spacing: { after: 80 } }));
+    gridKids.push(weekTable(gw));
+    gw = addDays(gw, 7); gn++;
+  }
+  // legend under the first week's heading, once the kinds in use are known
+  const legend = new D.Paragraph({ spacing: { after: 80 }, children: usedKinds.filter(k => RSPH.kinds[k]).map(k =>
+    run('  ' + RSPH.kinds[k].label + '  ', { size: 14, bold: true, color: hex(RSPH.kinds[k].color),
+      shading: { type: D.ShadingType.CLEAR, fill: hex(RSPH.kinds[k].bg), color: 'auto' } })).reduce((a, r) => a.concat([r, run('   ')]), []) });
+  gridKids.splice(3, 0, legend);
+
   const children = [
     para(run((RSPH.meta.school ? P(RSPH.meta.school) : 'Ramaiah School of Public Health').toUpperCase(),
-      { bold: true, size: 16, color: CORAL })),
+      { bold: true, size: 16, color: CORAL }), { pageBreakBefore: true }),
     para(run(P(p.name) + ' — Semester ' + tt.sem, { bold: true, size: 34, color: WINE }), { spacing: { after: 60 } }),
     para(run('Course-wise teaching schedule · ' + dmy(from) + ' to ' + dmy(to), { size: 24, color: WINE })),
     para(run('Batch ' + tt.batch + ' · Academic Year ' + tt.ay + ' · ' + P(tt.venue) +
@@ -153,7 +248,7 @@ function downloadWord(tt, opts) {
       footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.RIGHT,
         children: [run(P(p.short) + ' Sem ' + tt.sem + ' · page ', { size: 16, color: MUTE }),
                    new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: MUTE })] })] }) },
-      children
+      children: gridKids.concat(children)
     }]
   });
 
