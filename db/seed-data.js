@@ -154,7 +154,7 @@ const timetables = [
     "flags": [
       "Semester 1 officially starts on 16 November 2026 (Day 1) and runs to 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
-      "Community Medicine slots (from 27 Nov 2026), as proposed by the Department of Community Medicine: Biostatistics Wednesday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots) and Epidemiology Friday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots). Healthcare Management &amp; Leadership is on Thursday 9:00 am and the second PH Systems &amp; Health Policy class on Friday 9:00 am; Friday afternoon has the Mentor&ndash;Mentee Meeting and Public Health Lecture Series."
+      "Community Medicine slots (from 27 Nov 2026), as proposed by the Department of Community Medicine: Biostatistics Wednesday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots) and Epidemiology Friday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots). Healthcare Management &amp; Leadership is on Thursday 9:00 am and the second PH Systems &amp; Health Policy class on Friday 9:00 am; Friday afternoon: Principles &amp; Practice of Public Health 2&ndash;3 pm, Mentor&ndash;Mentee Meeting 3&ndash;4 pm, Public Health Lecture Series 4&ndash;5 pm."
     ],
     "slots": [
       {
@@ -213,24 +213,24 @@ const timetables = [
           "t": "Epidemiology"
         },
         {
+          "c": "PHC501A",
+          "f": "Dr. Tejaswini B. D",
           "i": 4,
+          "k": "lecture",
+          "n": 1,
+          "t": "Principles and Practice of Public Health"
+        },
+        {
+          "i": 5,
           "k": "mentoring",
           "n": 1,
           "t": "Mentor&ndash;Mentee Meeting"
         },
         {
-          "i": 5,
+          "i": 6,
           "k": "academic",
           "n": 1,
           "t": "Public Health Lecture Series"
-        },
-        {
-          "c": "PHC501A",
-          "f": "Dr. Tejaswini B. D",
-          "i": 6,
-          "k": "lecture",
-          "n": 1,
-          "t": "Principles and Practice of Public Health"
         }
       ],
       "Mon": [
@@ -409,24 +409,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2026-12-04": [
@@ -447,24 +447,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2026-12-11": [
@@ -485,24 +485,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2026-12-18": [
@@ -523,24 +523,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-01-01": [
@@ -561,24 +561,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-01-08": [
@@ -599,24 +599,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-01-15": [
@@ -637,24 +637,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-01-22": [
@@ -675,24 +675,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-01-29": [
@@ -713,24 +713,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-02-05": [
@@ -751,24 +751,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-02-12": [
@@ -789,24 +789,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-02-19": [
@@ -827,24 +827,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ],
         "2027-02-26": [
@@ -865,24 +865,24 @@ const timetables = [
             "t": "Epidemiology"
           },
           {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
             "i": 4,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          },
+          {
+            "i": 5,
             "k": "mentoring",
             "n": 1,
             "t": "Mentor&ndash;Mentee Meeting"
           },
           {
-            "i": 5,
+            "i": 6,
             "k": "academic",
             "n": 1,
             "t": "Public Health Lecture Series"
-          },
-          {
-            "c": "PHC501A",
-            "f": "Dr. Tejaswini B. D",
-            "i": 6,
-            "k": "lecture",
-            "n": 1,
-            "t": "Principles and Practice of Public Health"
           }
         ]
       }
