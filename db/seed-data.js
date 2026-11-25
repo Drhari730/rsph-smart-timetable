@@ -154,47 +154,85 @@ const timetables = [
     "flags": [
       "Semester 1 officially starts on 16 November 2026 (Day 1) and runs to 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
-      "Wednesday 10:45 am &ndash; 12:00 pm Seminar slot given to Public Health Systems &amp; Health Policy so its 45 specified hours fit within the semester."
+      "Community Medicine slots (from 25 Nov 2026): Biostatistics Wednesday 10:45 am &ndash; 1:15 pm and Epidemiology Friday 2:00 &ndash; 4:00 pm, as requested by the Department of Community Medicine. Healthcare Management &amp; Leadership moved from Friday to Thursday 9:00 am and the second PH Systems &amp; Health Policy class to Friday 9:00 am; the displaced seminar, discussion and lecture-series sessions moved into the freed slots."
     ],
     "slots": [
       {
-        "s": "09:00",
         "e": "10:45",
+        "s": "09:00",
         "label": "9:00 &ndash; 10:45 am"
       },
       {
-        "s": "10:45",
         "e": "12:00",
+        "s": "10:45",
         "label": "10:45 am &ndash; 12:00 pm"
       },
       {
-        "s": "12:00",
         "e": "13:15",
+        "s": "12:00",
         "label": "12:00 &ndash; 1:15 pm"
       },
       {
-        "s": "13:15",
         "e": "14:00",
+        "s": "13:15",
         "label": "1:15 &ndash; 2:00 pm",
         "lunch": true
       },
       {
-        "s": "14:00",
         "e": "15:00",
+        "s": "14:00",
         "label": "2:00 &ndash; 3:00 pm"
       },
       {
-        "s": "15:00",
         "e": "16:00",
+        "s": "15:00",
         "label": "3:00 &ndash; 4:00 pm"
       },
       {
-        "s": "16:00",
         "e": "17:00",
+        "s": "16:00",
         "label": "4:00 &ndash; 5:00 pm"
       }
     ],
     "days": {
+      "Fri": [
+        {
+          "i": 0,
+          "n": 1,
+          "t": "Public Health Systems and Health Policy",
+          "c": "PHC502A",
+          "f": "Dr. G Hari Prakash",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 1,
+          "t": "Public Health Lecture Series",
+          "k": "academic"
+        },
+        {
+          "i": 2,
+          "n": 1,
+          "t": "Mentor&ndash;Mentee Meeting",
+          "k": "mentoring"
+        },
+        {
+          "i": 4,
+          "n": 2,
+          "t": "Epidemiology",
+          "c": "PHC503A",
+          "f": "Community Medicine faculty",
+          "k": "lecture"
+        },
+        {
+          "i": 6,
+          "n": 1,
+          "t": "Principles and Practice of Public Health",
+          "c": "PHC501A",
+          "f": "Dr. Tejaswini B. D",
+          "k": "lecture"
+        }
+      ],
       "Mon": [
         {
           "i": 0,
@@ -235,91 +273,28 @@ const timetables = [
           "k": "mentoring"
         }
       ],
-      "Tue": [
+      "Sat": [
         {
+          "c": "PHO501A",
           "i": 0,
-          "n": 1,
-          "t": "Biostatistics",
-          "c": "PHC505A",
-          "f": "Community Medicine faculty",
-          "k": "lecture"
-        },
-        {
-          "i": 1,
-          "n": 1,
-          "t": "Seminar",
-          "k": "academic"
-        },
-        {
-          "i": 2,
-          "n": 1,
-          "t": "Hands-on Exercises",
-          "k": "academic"
+          "k": "elective",
+          "n": 3,
+          "t": "O/GEC-1"
         },
         {
           "i": 4,
-          "n": 1,
-          "t": "Seminar / Article Discussion",
-          "k": "academic"
-        },
-        {
-          "i": 5,
-          "n": 2,
-          "t": "Biostatistics",
-          "c": "PHC505A",
-          "f": "Community Medicine faculty",
-          "k": "lecture"
-        }
-      ],
-      "Wed": [
-        {
-          "i": 0,
-          "n": 1,
-          "t": "Public Health Systems and Health Policy",
-          "c": "PHC502A",
-          "f": "Dr. G Hari Prakash",
-          "k": "lecture"
-        },
-        {
-          "i": 1,
-          "n": 1,
-          "t": "Public Health Systems and Health Policy",
-          "k": "lecture",
-          "c": "PHC502A",
-          "f": "Dr. G Hari Prakash"
-        },
-        {
-          "i": 2,
-          "n": 1,
-          "t": "Group Discussion",
-          "k": "academic"
-        },
-        {
-          "i": 4,
-          "n": 1,
-          "t": "Guest Lecture / Brainstorming Session",
-          "k": "academic"
-        },
-        {
-          "i": 5,
-          "n": 1,
-          "t": "Seminar",
-          "k": "academic"
-        },
-        {
-          "i": 6,
-          "n": 1,
-          "t": "Remedial Classes",
-          "k": "remedial"
+          "k": "academic",
+          "n": 3,
+          "t": "Brainstorming Session"
         }
       ],
       "Thu": [
         {
           "i": 0,
           "n": 1,
-          "t": "Epidemiology",
-          "c": "PHC503A",
-          "f": "Community Medicine faculty",
+          "t": "Healthcare Management and Leadership",
+          "c": "PHC504B",
+          "f": "Dr. G Hari Prakash",
           "k": "lecture"
         },
         {
@@ -347,28 +322,24 @@ const timetables = [
           "k": "academic"
         }
       ],
-      "Fri": [
+      "Tue": [
         {
           "i": 0,
           "n": 1,
-          "t": "Healthcare Management and Leadership",
-          "c": "PHC504B",
-          "f": "Dr. G Hari Prakash",
-          "k": "lecture"
+          "t": "Group Discussion",
+          "k": "academic"
         },
         {
           "i": 1,
           "n": 1,
-          "t": "Biostatistics",
-          "c": "PHC505A",
-          "f": "Community Medicine faculty",
-          "k": "lecture"
+          "t": "Seminar",
+          "k": "academic"
         },
         {
           "i": 2,
           "n": 1,
-          "t": "Mentor&ndash;Mentee Meeting",
-          "k": "mentoring"
+          "t": "Hands-on Exercises",
+          "k": "academic"
         },
         {
           "i": 4,
@@ -378,32 +349,45 @@ const timetables = [
         },
         {
           "i": 5,
+          "n": 2,
+          "t": "Seminar / Article Discussion",
+          "k": "academic"
+        }
+      ],
+      "Wed": [
+        {
+          "i": 0,
           "n": 1,
-          "t": "Public Health Lecture Series",
+          "t": "Public Health Systems and Health Policy",
+          "c": "PHC502A",
+          "f": "Dr. G Hari Prakash",
+          "k": "lecture"
+        },
+        {
+          "i": 1,
+          "n": 2,
+          "t": "Biostatistics",
+          "c": "PHC505A",
+          "f": "Community Medicine faculty",
+          "k": "lecture"
+        },
+        {
+          "i": 4,
+          "n": 1,
+          "t": "Guest Lecture / Brainstorming Session",
+          "k": "academic"
+        },
+        {
+          "i": 5,
+          "n": 1,
+          "t": "Seminar",
           "k": "academic"
         },
         {
           "i": 6,
           "n": 1,
-          "t": "Principles and Practice of Public Health",
-          "c": "PHC501A",
-          "f": "Dr. Tejaswini B. D",
-          "k": "lecture"
-        }
-      ],
-      "Sat": [
-        {
-          "i": 0,
-          "n": 3,
-          "t": "O/GEC-1",
-          "c": "PHO501A",
-          "k": "elective"
-        },
-        {
-          "i": 4,
-          "n": 3,
-          "t": "Brainstorming Session",
-          "k": "academic"
+          "t": "Remedial Classes",
+          "k": "remedial"
         }
       ]
     }
