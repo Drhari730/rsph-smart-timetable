@@ -154,7 +154,7 @@ const timetables = [
     "flags": [
       "Semester 1 officially starts on 16 November 2026 (Day 1) and runs to 20 February 2027.",
       "The Saturday afternoon block is spelt &ldquo;Brainstroming&rdquo; in the source; shown here corrected.",
-      "Community Medicine slots (from 25 Nov 2026): Biostatistics Wednesday 10:45 am &ndash; 1:15 pm and Epidemiology Friday 2:00 &ndash; 4:00 pm, as requested by the Department of Community Medicine. Healthcare Management &amp; Leadership moved from Friday to Thursday 9:00 am and the second PH Systems &amp; Health Policy class to Friday 9:00 am; the displaced seminar, discussion and lecture-series sessions moved into the freed slots."
+      "Community Medicine slots (from 27 Nov 2026), as proposed by the Department of Community Medicine: Biostatistics Wednesday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots) and Epidemiology Friday 11:00 am &ndash; 1:00 pm (10:45 am &ndash; 1:15 pm slots). Healthcare Management &amp; Leadership is on Thursday 9:00 am and the second PH Systems &amp; Health Policy class on Friday 9:00 am; Friday afternoon has the Mentor&ndash;Mentee Meeting and Public Health Lecture Series."
     ],
     "slots": [
       {
@@ -197,80 +197,80 @@ const timetables = [
     "days": {
       "Fri": [
         {
-          "i": 0,
-          "n": 1,
-          "t": "Public Health Systems and Health Policy",
           "c": "PHC502A",
           "f": "Dr. G Hari Prakash",
-          "k": "lecture"
+          "i": 0,
+          "k": "lecture",
+          "n": 1,
+          "t": "Public Health Systems and Health Policy"
         },
         {
+          "c": "PHC503A",
+          "f": "Community Medicine faculty",
           "i": 1,
-          "n": 1,
-          "t": "Public Health Lecture Series",
-          "k": "academic"
-        },
-        {
-          "i": 2,
-          "n": 1,
-          "t": "Mentor&ndash;Mentee Meeting",
-          "k": "mentoring"
+          "k": "lecture",
+          "n": 2,
+          "t": "Epidemiology"
         },
         {
           "i": 4,
-          "n": 2,
-          "t": "Epidemiology",
-          "c": "PHC503A",
-          "f": "Community Medicine faculty",
-          "k": "lecture"
+          "k": "mentoring",
+          "n": 1,
+          "t": "Mentor&ndash;Mentee Meeting"
         },
         {
-          "i": 6,
+          "i": 5,
+          "k": "academic",
           "n": 1,
-          "t": "Principles and Practice of Public Health",
+          "t": "Public Health Lecture Series"
+        },
+        {
           "c": "PHC501A",
           "f": "Dr. Tejaswini B. D",
-          "k": "lecture"
+          "i": 6,
+          "k": "lecture",
+          "n": 1,
+          "t": "Principles and Practice of Public Health"
         }
       ],
       "Mon": [
         {
-          "i": 0,
-          "n": 1,
-          "t": "Principles and Practice of Public Health",
           "c": "PHC501A",
           "f": "Dr. Tejaswini B. D",
-          "k": "lecture"
+          "i": 0,
+          "k": "lecture",
+          "n": 1,
+          "t": "Principles and Practice of Public Health"
         },
         {
           "i": 1,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar",
-          "k": "academic"
+          "t": "Seminar"
         },
         {
           "i": 2,
+          "k": "academic",
           "n": 1,
-          "t": "Group Discussion",
-          "k": "academic"
+          "t": "Group Discussion"
         },
         {
           "i": 4,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar / Article Discussion",
-          "k": "academic"
+          "t": "Seminar / Article Discussion"
         },
         {
           "i": 5,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar",
-          "k": "academic"
+          "t": "Seminar"
         },
         {
           "i": 6,
+          "k": "mentoring",
           "n": 1,
-          "t": "Mentor&ndash;Mentee Meeting",
-          "k": "mentoring"
+          "t": "Mentor&ndash;Mentee Meeting"
         }
       ],
       "Sat": [
@@ -290,106 +290,602 @@ const timetables = [
       ],
       "Thu": [
         {
-          "i": 0,
-          "n": 1,
-          "t": "Healthcare Management and Leadership",
           "c": "PHC504B",
           "f": "Dr. G Hari Prakash",
-          "k": "lecture"
+          "i": 0,
+          "k": "lecture",
+          "n": 1,
+          "t": "Healthcare Management and Leadership"
         },
         {
           "i": 1,
+          "k": "academic",
           "n": 1,
-          "t": "Guest Lecture",
-          "k": "academic"
+          "t": "Guest Lecture"
         },
         {
           "i": 2,
+          "k": "academic",
           "n": 1,
-          "t": "Journal Club",
-          "k": "academic"
+          "t": "Journal Club"
         },
         {
           "i": 4,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar / Article Discussion",
-          "k": "academic"
+          "t": "Seminar / Article Discussion"
         },
         {
           "i": 5,
+          "k": "academic",
           "n": 2,
-          "t": "Case-based Discussion",
-          "k": "academic"
+          "t": "Case-based Discussion"
         }
       ],
       "Tue": [
         {
           "i": 0,
+          "k": "academic",
           "n": 1,
-          "t": "Group Discussion",
-          "k": "academic"
+          "t": "Group Discussion"
         },
         {
           "i": 1,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar",
-          "k": "academic"
+          "t": "Seminar"
         },
         {
           "i": 2,
+          "k": "academic",
           "n": 1,
-          "t": "Hands-on Exercises",
-          "k": "academic"
+          "t": "Hands-on Exercises"
         },
         {
           "i": 4,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar / Article Discussion",
-          "k": "academic"
+          "t": "Seminar / Article Discussion"
         },
         {
           "i": 5,
+          "k": "academic",
           "n": 2,
-          "t": "Seminar / Article Discussion",
-          "k": "academic"
+          "t": "Seminar / Article Discussion"
         }
       ],
       "Wed": [
         {
-          "i": 0,
-          "n": 1,
-          "t": "Public Health Systems and Health Policy",
           "c": "PHC502A",
           "f": "Dr. G Hari Prakash",
-          "k": "lecture"
+          "i": 0,
+          "k": "lecture",
+          "n": 1,
+          "t": "Public Health Systems and Health Policy"
         },
         {
-          "i": 1,
-          "n": 2,
-          "t": "Biostatistics",
           "c": "PHC505A",
           "f": "Community Medicine faculty",
-          "k": "lecture"
+          "i": 1,
+          "k": "lecture",
+          "n": 2,
+          "t": "Biostatistics"
         },
         {
           "i": 4,
+          "k": "academic",
           "n": 1,
-          "t": "Guest Lecture / Brainstorming Session",
-          "k": "academic"
+          "t": "Guest Lecture / Brainstorming Session"
         },
         {
           "i": 5,
+          "k": "academic",
           "n": 1,
-          "t": "Seminar",
-          "k": "academic"
+          "t": "Seminar"
         },
         {
           "i": 6,
+          "k": "remedial",
           "n": 1,
-          "t": "Remedial Classes",
-          "k": "remedial"
+          "t": "Remedial Classes"
         }
-      ]
+      ],
+      "__dates": {
+        "2026-11-27": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Ananth Ram (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2026-12-04": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Arun Kumar V (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2026-12-11": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Naveen R (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2026-12-18": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Anusha S (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-01-01": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Ananth Ram (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-01-08": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Ranjith V (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-01-15": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Lalitha K (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-01-22": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Dinesh Rajaram (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-01-29": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Naveen R (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-02-05": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Pavithra C (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-02-12": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Pavithra C (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-02-19": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Kadambari N (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ],
+        "2027-02-26": [
+          {
+            "c": "PHC502A",
+            "f": "Dr. G Hari Prakash",
+            "i": 0,
+            "k": "lecture",
+            "n": 1,
+            "t": "Public Health Systems and Health Policy"
+          },
+          {
+            "c": "PHC503A",
+            "f": "Dr. Babitha R (Community Medicine)",
+            "i": 1,
+            "k": "lecture",
+            "n": 2,
+            "t": "Epidemiology"
+          },
+          {
+            "i": 4,
+            "k": "mentoring",
+            "n": 1,
+            "t": "Mentor&ndash;Mentee Meeting"
+          },
+          {
+            "i": 5,
+            "k": "academic",
+            "n": 1,
+            "t": "Public Health Lecture Series"
+          },
+          {
+            "c": "PHC501A",
+            "f": "Dr. Tejaswini B. D",
+            "i": 6,
+            "k": "lecture",
+            "n": 1,
+            "t": "Principles and Practice of Public Health"
+          }
+        ]
+      }
     }
   },
   {
